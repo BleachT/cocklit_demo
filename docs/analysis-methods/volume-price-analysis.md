@@ -229,10 +229,11 @@ Step 4：结论
 
 总变化 = -960 + 600 + (-60) = -420 万元 ✅
 
-贡献率分析：
-  量拖累销售额 960 万（负贡献 228%）
-  价拉升销售额 600 万（正贡献 143%）
-  交叉项拖累  60 万（负贡献 -14%）
+贡献率分析（各项贡献 / |总变化| × 100%，正号=扩大降幅，负号=对冲降幅）：
+  量贡献：-960万 / -420万 × 100% = +229%（量减少是主要拖累）
+  价贡献：+600万 / -420万 × 100% = -143%（价格提升对冲了部分降幅）
+  交叉项：  -60万 / -420万 × 100% =  +14%（轻微放大降幅）
+  合计：229% - 143% + 14% = 100% ✅
   净效果：-420 万（-4.4%）
 ```
 
@@ -492,10 +493,9 @@ Step 4: 继续按产品线下钻
   ΔP = 53,600 - 53,333 = +267 元
 
   量贡献 = -100 × 53,333 = -533万
-  价贡献 = +267 × 600 = +160万
-  交叉项 = -100 × 267 = -27万
-  合计   = -533 + 160 + (-27) = -400万（注：实际差-520，
-           差额120万来自四舍五入和其他调整，此处为示意）
+  价贡献 = +267 × 600 =   +16万
+  交叉项 = -100 × 267 =    -3万
+  合计   = -533 + 16 + (-3) = -520万 ✅
 
   结论：车改装下滑 520 万，几乎全部是量的问题。
         单车收入略有提升，但完全补不回量的损失。
@@ -1093,7 +1093,7 @@ def volume_price_decomposition(
     # 验证
     calculated_total = quantity_contribution + price_contribution + cross_term
     assert abs(calculated_total - total_change) < 0.01, \
-        f"量价分解验证失败: {calculated_total} != {total_change}"
+        f"量价分解验证失败: |{calculated_total} - {total_change}| >= 0.01"
     
     return {
         "label": label,
@@ -1303,7 +1303,7 @@ export function volumePriceDecomposition(
   // 验证（浮点数误差容忍）
   const calculated = quantityContribution + priceContribution + crossTerm;
   if (Math.abs(calculated - totalChange) > 0.01) {
-    throw new Error(`量价分解验证失败: ${calculated} !== ${totalChange}`);
+    throw new Error(`量价分解验证失败: 差异 ${Math.abs(calculated - totalChange)} 超过容忍度 0.01`);
   }
 
   const totalAbsChange = Math.abs(totalChange);
