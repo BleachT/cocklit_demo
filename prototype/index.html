@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车企周边好物商城 · 智能驾驶舱</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #0f1628;
+    --bg-card: #131d35;
+    --bg-card-hover: #1a2644;
+    --border: #1e3a5f;
+    --border-bright: #2a5298;
+    --accent-blue: #1890ff;
+    --accent-cyan: #00d4ff;
+    --accent-green: #00c853;
+    --accent-yellow: #ffc107;
+    --accent-red: #ff4d4f;
+    --accent-purple: #7c4dff;
+    --text-primary: #e8edf5;
+    --text-secondary: #8ba4c8;
+    --text-muted: #4a6080;
+    --glow-blue: rgba(24, 144, 255, 0.3);
+    --glow-cyan: rgba(0, 212, 255, 0.2);
+    --glow-red: rgba(255, 77, 79, 0.3);
+    --glow-green: rgba(0, 200, 83, 0.2);
+  }
+
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── HEADER ─── */
+  .cockpit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    background: linear-gradient(90deg, #071020 0%, #0c1a30 50%, #071020 100%);
+    border-bottom: 1px solid var(--border-bright);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,80,200,0.3);
+  }
+
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    letter-spacing: 1px;
+  }
+
+  .header-logo .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #1890ff, #00d4ff);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .header-nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav-tab {
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    background: none;
+  }
+
+  .nav-tab:hover { color: var(--accent-cyan); background: rgba(0,212,255,0.05); }
+
+  .nav-tab.active {
+    color: var(--accent-cyan);
+    background: rgba(0,212,255,0.1);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 10px var(--glow-cyan);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
+    animation: pulse-green 2s infinite;
+  }
+
+  @keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .time-display {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--accent-cyan);
+    letter-spacing: 1px;
+  }
+
+  /* ─── BREADCRUMB ─── */
+  .breadcrumb {
+    padding: 8px 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(30,58,95,0.5);
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .breadcrumb span { color: var(--accent-blue); cursor: pointer; }
+  .breadcrumb span:hover { text-decoration: underline; }
+
+  /* ─── MAIN CONTENT ─── */
+  .view-panel {
+    display: none;
+    padding: 20px 24px;
+  }
+
+  .view-panel.active { display: block; }
+
+  /* ─── KPI STRIP ─── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .kpi-card:hover {
+    border-color: var(--border-bright);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,80,200,0.3);
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--kpi-color, var(--accent-blue));
+    border-radius: 10px 10px 0 0;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .kpi-delta {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .kpi-delta.up { color: var(--accent-green); background: rgba(0,200,83,0.1); }
+  .kpi-delta.down { color: var(--accent-red); background: rgba(255,77,79,0.1); }
+
+  .kpi-sparkline { flex: 1; height: 24px; }
+
+  /* ─── GRID LAYOUTS ─── */
+  .grid-2-1 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ─── CARD ─── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    box-shadow: 0 0 6px var(--accent-cyan);
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-red { background: rgba(255,77,79,0.15); color: var(--accent-red); border: 1px solid rgba(255,77,79,0.3); }
+  .badge-yellow { background: rgba(255,193,7,0.15); color: var(--accent-yellow); border: 1px solid rgba(255,193,7,0.3); }
+  .badge-green { background: rgba(0,200,83,0.15); color: var(--accent-green); border: 1px solid rgba(0,200,83,0.3); }
+  .badge-blue { background: rgba(24,144,255,0.15); color: var(--accent-blue); border: 1px solid rgba(24,144,255,0.3); }
+  .badge-purple { background: rgba(124,77,255,0.15); color: var(--accent-purple); border: 1px solid rgba(124,77,255,0.3); }
+
+  .card-body { padding: 16px; }
+
+  .chart-container { position: relative; }
+
+  /* ─── ANOMALY LIST ─── */
+  .anomaly-list { list-style: none; }
+
+  .anomaly-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    gap: 10px;
+  }
+
+  .anomaly-item:hover {
+    border-color: var(--accent-blue);
+    background: rgba(24,144,255,0.05);
+  }
+
+  .anomaly-item.critical { border-left: 3px solid var(--accent-red); }
+  .anomaly-item.warning  { border-left: 3px solid var(--accent-yellow); }
+  .anomaly-item.info     { border-left: 3px solid var(--accent-blue); }
+
+  .anomaly-icon { font-size: 16px; width: 20px; text-align: center; }
+  .anomaly-content { flex: 1; }
+  .anomaly-title { font-size: 13px; color: var(--text-primary); margin-bottom: 2px; }
+  .anomaly-desc { font-size: 11px; color: var(--text-secondary); }
+  .anomaly-time { font-size: 11px; color: var(--text-muted); }
+
+  /* ─── ATTRIBUTION PANEL ─── */
+  .attribution-container {
+    padding: 16px;
+  }
+
+  .attr-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .attr-metric {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .attr-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent-red);
+  }
+
+  .attr-bar-list { list-style: none; }
+
+  .attr-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .attr-factor {
+    font-size: 12px;
+    color: var(--text-secondary);
+    width: 100px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .attr-bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .attr-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+
+  .attr-pct {
+    font-size: 12px;
+    font-weight: 600;
+    width: 42px;
+    text-align: right;
+  }
+
+  .attr-delta {
+    font-size: 11px;
+    width: 56px;
+    text-align: right;
+    color: var(--text-muted);
+  }
+
+  /* ─── KNOWLEDGE GRAPH ─── */
+  #graph-canvas {
+    width: 100%;
+    height: 420px;
+  }
+
+  /* ─── OBJECT DETAIL ─── */
+  .object-detail {
+    padding: 16px;
+  }
+
+  .obj-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .obj-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    background: rgba(24,144,255,0.1);
+    border: 1px solid rgba(24,144,255,0.3);
+  }
+
+  .obj-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .obj-type { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  .obj-props {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .obj-prop {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .obj-prop-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .obj-prop-value { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+
+  .obj-relations {
+    margin-top: 8px;
+  }
+
+  .relation-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-size: 12px;
+    margin: 4px 4px 4px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(24,144,255,0.08);
+    border: 1px solid rgba(24,144,255,0.2);
+    color: var(--accent-blue);
+  }
+
+  .relation-tag:hover {
+    background: rgba(24,144,255,0.15);
+    border-color: var(--accent-blue);
+  }
+
+  /* ─── ACTION PANEL ─── */
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .action-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .action-card:hover {
+    border-color: var(--accent-cyan);
+    background: rgba(0,212,255,0.05);
+    box-shadow: 0 0 15px var(--glow-cyan);
+  }
+
+  .action-icon { font-size: 24px; margin-bottom: 8px; }
+  .action-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .action-desc { font-size: 11px; color: var(--text-secondary); }
+
+  .action-btn {
+    margin-top: 10px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .action-btn-primary {
+    background: var(--accent-blue);
+    color: white;
+  }
+
+  .action-btn-primary:hover {
+    background: #40a9ff;
+    box-shadow: 0 0 10px rgba(24,144,255,0.5);
+  }
+
+  .action-btn-danger {
+    background: rgba(255,77,79,0.15);
+    color: var(--accent-red);
+    border: 1px solid rgba(255,77,79,0.3);
+  }
+
+  .action-btn-danger:hover {
+    background: rgba(255,77,79,0.25);
+  }
+
+  /* ─── INSIGHT CHAIN ─── */
+  .insight-chain {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  .chain-step {
+    flex: 1;
+    min-width: 140px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    position: relative;
+  }
+
+  .chain-step + .chain-step {
+    margin-left: 24px;
+  }
+
+  .chain-step + .chain-step::before {
+    content: '→';
+    position: absolute;
+    left: -18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent-blue);
+    font-size: 18px;
+  }
+
+  .chain-step-icon { font-size: 20px; margin-bottom: 6px; }
+  .chain-step-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .chain-step-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .chain-step-desc { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* ─── TABLE ─── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .data-table th {
+    padding: 8px 12px;
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .data-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(30,58,95,0.3);
+    color: var(--text-secondary);
+  }
+
+  .data-table tr:hover td { background: rgba(255,255,255,0.02); color: var(--text-primary); }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+  }
+
+  /* ─── TOOLTIP ─── */
+  .tooltip {
+    position: fixed;
+    background: rgba(10,20,40,0.95);
+    border: 1px solid var(--border-bright);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-primary);
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 220px;
+    display: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+
+  /* ─── ANIMATE IN ─── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card { animation: fadeInUp 0.3s ease forwards; }
+
+  /* ─── SCAN LINE ─── */
+  .cockpit-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="cockpit-header">
+  <div class="header-logo">
+    <div class="logo-icon">🚗</div>
+    车企好物商城 · 智能驾驶舱
+  </div>
+
+  <nav class="header-nav">
+    <button class="nav-tab active" onclick="switchView('overview')">🌐 全局态势</button>
+    <button class="nav-tab" onclick="switchView('attribution')">🔍 归因分析</button>
+    <button class="nav-tab" onclick="switchView('graph')">🕸 本体图谱</button>
+    <button class="nav-tab" onclick="switchView('object')">📦 对象详情</button>
+    <button class="nav-tab" onclick="switchView('action')">⚡ 行动中枢</button>
+  </nav>
+
+  <div class="header-right">
+    <span><span class="status-dot"></span> 实时同步</span>
+    <span class="time-display" id="clock">--:--:--</span>
+    <span style="color:var(--text-muted)">数据至 2024-03-31</span>
+  </div>
+</header>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb" id="breadcrumb">
+  <span onclick="switchView('overview')">驾驶舱</span>
+  <span style="color:var(--text-muted)">›</span>
+  <span id="breadcrumb-current" style="color:var(--text-secondary);cursor:default">全局态势总览</span>
+</div>
+
+<!-- ══════════════════════════════════ VIEW 0: OVERVIEW ══════════════════════════════════ -->
+<div class="view-panel active" id="view-overview">
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-card" style="--kpi-color:#1890ff" onclick="switchView('attribution')">
+      <div class="kpi-label">本月 GMV（万元）</div>
+      <div class="kpi-value" id="kpi-gmv">4,821</div>
+      <div class="kpi-meta">
+        <span class="kpi-delta down">▼ 8.3%</span>
+        <span style="font-size:11px;color:var(--text-muted)">环比</span>
+      </div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#00c853" onclick="switchView('object')">
+      <div class="kpi-label">订单量（笔）</div>
+      <div class="kpi-value">38,429</div>
+      <div class="kpi-meta">
+        <span class="kpi-delta up">▲ 3.1%</span>
+        <span style="font-size:11px;color:var(--text-muted)">环比</span>
+      </div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#ffc107">
+      <div class="kpi-label">客单价（元）</div>
+      <div class="kpi-value">125.5</div>
+      <div class="kpi-meta">
+        <span class="kpi-delta down">▼ 11.1%</span>
+        <span style="font-size:11px;color:var(--text-muted)">环比</span>
+      </div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#ff4d4f" onclick="switchView('attribution')">
+      <div class="kpi-label">退货率</div>
+      <div class="kpi-value">6.8%</div>
+      <div class="kpi-meta">
+        <span class="kpi-delta down">▼ +1.2pp</span>
+        <span style="font-size:11px;color:var(--text-muted)">恶化</span>
+      </div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#00d4ff">
+      <div class="kpi-label">活跃供应商</div>
+      <div class="kpi-value">142</div>
+      <div class="kpi-meta">
+        <span class="kpi-delta up">▲ 7家</span>
+        <span style="font-size:11px;color:var(--text-muted)">环比</span>
+      </div>
+    </div>
+    <div class="kpi-card" style="--kpi-color:#7c4dff">
+      <div class="kpi-label">NPS 评分</div>
+      <div class="kpi-value">72.4</div>
+      <div class="kpi-meta">
+        <span class="kpi-delta down">▼ 4.1</span>
+        <span style="font-size:11px;color:var(--text-muted)">环比</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 1 -->
+  <div class="grid-2-1">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot"></span>GMV 趋势 · 分品类</span>
+        <div class="card-actions">
+          <span class="badge badge-red">GMV ▼8.3%</span>
+          <span style="font-size:11px;color:var(--text-muted)">近30天</span>
+        </div>
+      </div>
+      <div class="chart-container" id="chart-gmv" style="height:240px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-red)"></span>异常告警</span>
+        <span class="badge badge-red">3 严重</span>
+      </div>
+      <div class="card-body" style="padding:10px 12px">
+        <ul class="anomaly-list">
+          <li class="anomaly-item critical" onclick="switchView('attribution')">
+            <span class="anomaly-icon">🔴</span>
+            <div class="anomaly-content">
+              <div class="anomaly-title">GMV 连续 3 日下滑 &gt;5%</div>
+              <div class="anomaly-desc">归因：客单价下跌 + 旗舰品类销售萎缩</div>
+            </div>
+            <span class="anomaly-time">10分钟前</span>
+          </li>
+          <li class="anomaly-item critical">
+            <span class="anomaly-icon">🔴</span>
+            <div class="anomaly-content">
+              <div class="anomaly-title">供应商 A-03 发货延迟率 42%</div>
+              <div class="anomaly-desc">影响订单 1,280 笔，退款风险 ¥86K</div>
+            </div>
+            <span class="anomaly-time">1小时前</span>
+          </li>
+          <li class="anomaly-item warning">
+            <span class="anomaly-icon">🟡</span>
+            <div class="anomaly-content">
+              <div class="anomaly-title">车载香薰品类库存告急</div>
+              <div class="anomaly-desc">3 SKU 预计 2 天内断货</div>
+            </div>
+            <span class="anomaly-time">2小时前</span>
+          </li>
+          <li class="anomaly-item info">
+            <span class="anomaly-icon">🔵</span>
+            <div class="anomaly-content">
+              <div class="anomaly-title">NPS 4月评分下降 4.1 分</div>
+              <div class="anomaly-desc">负面评价集中在"物流速度"</div>
+            </div>
+            <span class="anomaly-time">3小时前</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2 -->
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-green)"></span>品类销售占比</span>
+      </div>
+      <div class="chart-container" id="chart-category" style="height:220px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-yellow)"></span>供应商履约评分 TOP10</span>
+      </div>
+      <div class="chart-container" id="chart-supplier" style="height:220px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-purple)"></span>用户行为漏斗</span>
+      </div>
+      <div class="chart-container" id="chart-funnel" style="height:220px"></div>
+    </div>
+  </div>
+
+  <!-- Row 3 -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-cyan)"></span>退货率驱动因素分布</span>
+        <span class="badge badge-red">退货率 6.8%</span>
+      </div>
+      <div class="chart-container" id="chart-return" style="height:200px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-blue)"></span>热销 SKU 库存状态</span>
+        <span class="badge badge-yellow">3 SKU 告急</span>
+      </div>
+      <div class="card-body" style="padding:12px">
+        <table class="data-table">
+          <thead>
+            <tr><th>SKU</th><th>品类</th><th>库存(件)</th><th>预计售罄</th><th>状态</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>SKU-0042</td><td>车载香薰</td><td>87</td><td>1.8天</td>
+              <td><span class="badge badge-red">告急</span></td>
+            </tr>
+            <tr>
+              <td>SKU-0078</td><td>脚垫</td><td>312</td><td>3.2天</td>
+              <td><span class="badge badge-yellow">预警</span></td>
+            </tr>
+            <tr>
+              <td>SKU-0115</td><td>车载支架</td><td>1,240</td><td>12天</td>
+              <td><span class="badge badge-green">正常</span></td>
+            </tr>
+            <tr>
+              <td>SKU-0203</td><td>行车记录仪</td><td>56</td><td>1.2天</td>
+              <td><span class="badge badge-red">告急</span></td>
+            </tr>
+            <tr>
+              <td>SKU-0291</td><td>车载充电器</td><td>2,100</td><td>18天</td>
+              <td><span class="badge badge-green">正常</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════ VIEW 1: ATTRIBUTION ══════════════════════════════════ -->
+<div class="view-panel" id="view-attribution">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-red)"></span>GMV 下滑归因分析</span>
+        <span class="badge badge-red">环比 ▼8.3%</span>
+      </div>
+      <div class="attribution-container">
+        <div class="attr-header">
+          <div>
+            <div class="attr-metric">本月 GMV vs 上月</div>
+            <div class="attr-value">▼ -¥436 万元</div>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6">
+            AI 归因分析已找到 <strong style="color:var(--accent-cyan)">4 个主要驱动因子</strong>，<br>
+            可解释 <strong style="color:var(--accent-yellow)">91%</strong> 的下滑原因
+          </div>
+        </div>
+
+        <div style="margin-bottom:8px;font-size:11px;color:var(--text-muted);display:flex;gap:10px;padding:0 2px">
+          <span style="width:100px;text-align:right">因子</span>
+          <span style="flex:1;padding-left:8px">贡献度</span>
+          <span style="width:42px;text-align:right">占比</span>
+          <span style="width:56px;text-align:right">影响量</span>
+        </div>
+
+        <ul class="attr-bar-list">
+          <li class="attr-bar-item">
+            <span class="attr-factor">客单价下跌</span>
+            <div class="attr-bar-track">
+              <div class="attr-bar-fill" style="width:46%;background:linear-gradient(90deg,#ff4d4f,#ff7875)"></div>
+            </div>
+            <span class="attr-pct" style="color:var(--accent-red)">46%</span>
+            <span class="attr-delta">-¥200万</span>
+          </li>
+          <li class="attr-bar-item">
+            <span class="attr-factor">旗舰品类萎缩</span>
+            <div class="attr-bar-track">
+              <div class="attr-bar-fill" style="width:28%;background:linear-gradient(90deg,#fa8c16,#ffa940)"></div>
+            </div>
+            <span class="attr-pct" style="color:#fa8c16">28%</span>
+            <span class="attr-delta">-¥122万</span>
+          </li>
+          <li class="attr-bar-item">
+            <span class="attr-factor">供应链延迟</span>
+            <div class="attr-bar-track">
+              <div class="attr-bar-fill" style="width:11%;background:linear-gradient(90deg,#ffc107,#ffd666)"></div>
+            </div>
+            <span class="attr-pct" style="color:var(--accent-yellow)">11%</span>
+            <span class="attr-delta">-¥48万</span>
+          </li>
+          <li class="attr-bar-item">
+            <span class="attr-factor">退货率上升</span>
+            <div class="attr-bar-track">
+              <div class="attr-bar-fill" style="width:6%;background:linear-gradient(90deg,#7c4dff,#b39ddb)"></div>
+            </div>
+            <span class="attr-pct" style="color:var(--accent-purple)">6%</span>
+            <span class="attr-delta">-¥26万</span>
+          </li>
+          <li class="attr-bar-item">
+            <span class="attr-factor">其他因素</span>
+            <div class="attr-bar-track">
+              <div class="attr-bar-fill" style="width:9%;background:rgba(255,255,255,0.2)"></div>
+            </div>
+            <span class="attr-pct" style="color:var(--text-muted)">9%</span>
+            <span class="attr-delta">-¥40万</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-cyan)"></span>根因瀑布图</span>
+      </div>
+      <div class="chart-container" id="chart-waterfall" style="height:280px"></div>
+    </div>
+  </div>
+
+  <!-- Causal Chain -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header">
+      <span class="card-title"><span class="dot" style="background:var(--accent-yellow)"></span>因果传导链路 · 客单价下跌</span>
+      <span class="badge badge-yellow">深度追溯</span>
+    </div>
+    <div class="insight-chain">
+      <div class="chain-step">
+        <div class="chain-step-icon">📊</div>
+        <div class="chain-step-label">表象指标</div>
+        <div class="chain-step-title">GMV ▼8.3%</div>
+        <div class="chain-step-desc">本月 ¥4,821万 vs 上月 ¥5,257万</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-step-icon">💰</div>
+        <div class="chain-step-label">一级驱动</div>
+        <div class="chain-step-title">客单价 ▼11.1%</div>
+        <div class="chain-step-desc">¥125.5 vs 上月 ¥141.2</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-step-icon">🏷️</div>
+        <div class="chain-step-label">二级驱动</div>
+        <div class="chain-step-title">促销折扣过深</div>
+        <div class="chain-step-desc">平均折扣率从 8折 → 6.5折</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-step-icon">📦</div>
+        <div class="chain-step-label">三级驱动</div>
+        <div class="chain-step-title">行车记录仪断货</div>
+        <div class="chain-step-desc">旗舰品缺货 → 用低价品促销填坑</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-step-icon">🔗</div>
+        <div class="chain-step-label">根本原因</div>
+        <div class="chain-step-title">供应商 A-03 延迟</div>
+        <div class="chain-step-desc">发货延迟率 42%，交货周期延长 7天</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot"></span>品类维度归因对比</span>
+      </div>
+      <div class="chart-container" id="chart-attr-category" style="height:240px"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-purple)"></span>时序回溯 · 过去 30 天</span>
+      </div>
+      <div class="chart-container" id="chart-timeseries" style="height:240px"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════ VIEW 2: KNOWLEDGE GRAPH ══════════════════════════════════ -->
+<div class="view-panel" id="view-graph">
+  <div class="grid-2-1">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-cyan)"></span>业务本体关系图谱</span>
+        <div class="card-actions">
+          <span class="badge badge-blue">7 对象类型</span>
+          <span class="badge badge-purple">18 关系类型</span>
+        </div>
+      </div>
+      <div id="graph-canvas"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-green)"></span>图例说明</span>
+      </div>
+      <div class="card-body">
+        <div style="font-size:12px;color:var(--text-secondary);line-height:2">
+          <div><span style="color:#1890ff">●</span> 商品 (Product)</div>
+          <div><span style="color:#00c853">●</span> 品类 (Category)</div>
+          <div><span style="color:#ffc107">●</span> 供应商 (Supplier)</div>
+          <div><span style="color:#ff4d4f">●</span> 订单 (Order)</div>
+          <div><span style="color:#7c4dff">●</span> 用户 (User)</div>
+          <div><span style="color:#00d4ff">●</span> 物流 (Logistics)</div>
+          <div><span style="color:#eb2f96">●</span> 营销活动 (Campaign)</div>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--text-muted);line-height:1.8">
+          <div>── 所属关系</div>
+          <div>- - 供货关系</div>
+          <div>···· 关联关系</div>
+        </div>
+        <div style="margin-top:16px;font-size:12px;color:var(--text-secondary)">
+          <div style="font-weight:600;color:var(--text-primary);margin-bottom:8px">核心理念</div>
+          <p style="line-height:1.7;font-size:11px;">
+            每个业务实体作为<strong style="color:var(--accent-cyan)">本体对象</strong>存在，通过<strong style="color:var(--accent-blue)">语义关系</strong>互连。
+            点击任意节点可查看对象详情，沿关系链探索上下游关联，发现隐藏的业务风险。
+          </p>
+        </div>
+        <div style="margin-top:16px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">异常传播路径</div>
+          <div style="font-size:11px;color:var(--text-secondary);background:rgba(255,77,79,0.05);border:1px solid rgba(255,77,79,0.2);border-radius:6px;padding:8px;line-height:1.8">
+            供应商A-03延迟 → 行车记录仪断货 → 促销折扣加深 → 客单价下跌 → GMV下滑
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════ VIEW 3: OBJECT DETAIL ══════════════════════════════════ -->
+<div class="view-panel" id="view-object">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot"></span>对象 360° 视图</span>
+        <span class="badge badge-blue">供应商</span>
+      </div>
+      <div class="object-detail">
+        <div class="obj-header">
+          <div class="obj-icon">🏭</div>
+          <div>
+            <div class="obj-name">深圳卓越汽配科技有限公司</div>
+            <div class="obj-type">供应商 · ID: SUP-A03 · 一级供应商</div>
+          </div>
+          <span class="badge badge-red" style="margin-left:auto">高风险</span>
+        </div>
+
+        <div class="obj-props">
+          <div class="obj-prop">
+            <div class="obj-prop-label">本月供货额</div>
+            <div class="obj-prop-value" style="color:var(--accent-red)">¥286万</div>
+          </div>
+          <div class="obj-prop">
+            <div class="obj-prop-label">发货延迟率</div>
+            <div class="obj-prop-value" style="color:var(--accent-red)">42%</div>
+          </div>
+          <div class="obj-prop">
+            <div class="obj-prop-label">履约评分</div>
+            <div class="obj-prop-value" style="color:var(--accent-yellow)">58/100</div>
+          </div>
+          <div class="obj-prop">
+            <div class="obj-prop-label">在途订单</div>
+            <div class="obj-prop-value">1,280笔</div>
+          </div>
+          <div class="obj-prop">
+            <div class="obj-prop-label">退款风险</div>
+            <div class="obj-prop-value" style="color:var(--accent-red)">¥86K</div>
+          </div>
+          <div class="obj-prop">
+            <div class="obj-prop-label">合作年限</div>
+            <div class="obj-prop-value">3.5年</div>
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">关联对象</div>
+        <div class="obj-relations">
+          <span class="relation-tag" onclick="switchView('attribution')">📦 供应商品 · 行车记录仪 ×3款</span>
+          <span class="relation-tag">📋 关联订单 · 1,280笔</span>
+          <span class="relation-tag">🚚 物流商 · 顺丰/中通</span>
+          <span class="relation-tag">📊 历史质检报告 · 12份</span>
+          <span class="relation-tag" onclick="switchView('action')">⚡ 可执行操作 · 4种</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-yellow)"></span>供应商履约趋势</span>
+      </div>
+      <div class="chart-container" id="chart-supplier-trend" style="height:280px"></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-blue)"></span>关联商品详情</span>
+      </div>
+      <div class="card-body" style="padding:12px">
+        <table class="data-table">
+          <thead>
+            <tr><th>SKU</th><th>名称</th><th>库存</th><th>销量</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>SKU-0203</td><td>行车记录仪 4K</td><td style="color:var(--accent-red)">56件</td><td>892笔/月</td></tr>
+            <tr><td>SKU-0204</td><td>行车记录仪 1080P</td><td style="color:var(--accent-yellow)">210件</td><td>634笔/月</td></tr>
+            <tr><td>SKU-0205</td><td>行车记录仪前后双录</td><td>1,200件</td><td>421笔/月</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-red)"></span>用户投诉分布</span>
+      </div>
+      <div class="chart-container" id="chart-complaint" style="height:180px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-green)"></span>质量评分历史</span>
+      </div>
+      <div class="chart-container" id="chart-quality" style="height:180px"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════ VIEW 4: ACTION ══════════════════════════════════ -->
+<div class="view-panel" id="view-action">
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header">
+      <span class="card-title"><span class="dot" style="background:var(--accent-cyan)"></span>感知 → 理解 → 决策 → 行动 · 闭环流程</span>
+    </div>
+    <div class="insight-chain">
+      <div class="chain-step" style="border-color:rgba(255,77,79,0.3)">
+        <div class="chain-step-icon">👁️</div>
+        <div class="chain-step-label">感知 Observe</div>
+        <div class="chain-step-title">GMV 异常下滑</div>
+        <div class="chain-step-desc">实时监控系统自动发现 GMV 连续3天下滑 &gt;5%</div>
+      </div>
+      <div class="chain-step" style="border-color:rgba(255,193,7,0.3)">
+        <div class="chain-step-icon">🧠</div>
+        <div class="chain-step-label">理解 Orient</div>
+        <div class="chain-step-title">根因：供应链断链</div>
+        <div class="chain-step-desc">AI 归因：供应商A-03延迟 → 旗舰品断货</div>
+      </div>
+      <div class="chain-step" style="border-color:rgba(24,144,255,0.3)">
+        <div class="chain-step-icon">⚖️</div>
+        <div class="chain-step-label">决策 Decide</div>
+        <div class="chain-step-title">紧急补货 + 切换供应商</div>
+        <div class="chain-step-desc">系统推荐 3 个行动方案，已高亮最优解</div>
+      </div>
+      <div class="chain-step" style="border-color:rgba(0,200,83,0.3)">
+        <div class="chain-step-icon">⚡</div>
+        <div class="chain-step-label">行动 Act</div>
+        <div class="chain-step-title">一键触发工单</div>
+        <div class="chain-step-desc">直接创建补货工单并推送至采购系统</div>
+      </div>
+      <div class="chain-step" style="border-color:rgba(0,212,255,0.3)">
+        <div class="chain-step-icon">🔄</div>
+        <div class="chain-step-label">反馈 Feedback</div>
+        <div class="chain-step-title">持续跟踪结果</div>
+        <div class="chain-step-desc">行动后指标变化实时回流驾驶舱</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-red)"></span>紧急行动 · 需立即处理</span>
+        <span class="badge badge-red">2 待处理</span>
+      </div>
+      <div class="card-body">
+        <div class="action-grid">
+          <div class="action-card" style="border-color:rgba(255,77,79,0.3)">
+            <div class="action-icon">🚚</div>
+            <div class="action-title">紧急补货：行车记录仪 4K</div>
+            <div class="action-desc">当前库存 56 件，预计 1.2 天售罄。建议紧急从备用供应商 B-07 调货 500 件。</div>
+            <button class="action-btn action-btn-danger" onclick="triggerAction('补货工单已创建，工单号 PO-20240401-001')">🔥 立即创建补货工单</button>
+          </div>
+          <div class="action-card" style="border-color:rgba(255,77,79,0.3)">
+            <div class="action-icon">⚠️</div>
+            <div class="action-title">启动供应商 A-03 整改流程</div>
+            <div class="action-desc">延迟率 42% 超红线，需启动供应商整改。发送正式整改通知，设置 7 天响应期限。</div>
+            <button class="action-btn action-btn-danger" onclick="triggerAction('整改通知已发送至供应商 A-03，跟进周期 7 天')">📋 发送整改通知</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><span class="dot" style="background:var(--accent-yellow)"></span>建议行动 · AI 推荐方案</span>
+        <span class="badge badge-yellow">4 建议</span>
+      </div>
+      <div class="card-body">
+        <div class="action-grid">
+          <div class="action-card">
+            <div class="action-icon">💡</div>
+            <div class="action-title">优化车载香薰促销策略</div>
+            <div class="action-desc">AI 预测：将折扣率从 3.5折 调至 6折 可提升客单价 ¥15，GMV 预估增加 ¥60万。</div>
+            <button class="action-btn action-btn-primary" onclick="triggerAction('促销策略调整已提交审批，预计24小时生效')">📈 提交策略调整</button>
+          </div>
+          <div class="action-card">
+            <div class="action-icon">🎯</div>
+            <div class="action-title">召回高价值流失用户</div>
+            <div class="action-desc">过去 30 天未购买的 8,200 名高价值用户，通过定向优惠券召回，预估转化率 12%。</div>
+            <button class="action-btn action-btn-primary" onclick="triggerAction('营销活动已创建：流失用户召回 #CAM-041，目标人群 8,200 人')">📧 创建召回活动</button>
+          </div>
+          <div class="action-card">
+            <div class="action-icon">🔄</div>
+            <div class="action-title">切换备用物流商</div>
+            <div class="action-desc">当前延迟订单 1,280 笔可切换至极兔速递，预计缩短配送 1.5 天，降低 NPS 损耗。</div>
+            <button class="action-btn action-btn-primary" onclick="triggerAction('物流切换工单已提交，涉及订单 1,280 笔')">🚀 触发物流切换</button>
+          </div>
+          <div class="action-card">
+            <div class="action-icon">📊</div>
+            <div class="action-title">品类结构优化分析</div>
+            <div class="action-desc">旗舰品类贡献度从 38% 下降至 29%，建议启动品类结构调整专项分析。</div>
+            <button class="action-btn action-btn-primary" onclick="triggerAction('品类优化分析报告已加入任务队列，预计 30 分钟内生成')">📑 生成分析报告</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><span class="dot" style="background:var(--accent-green)"></span>行动执行追踪</span>
+      <span class="badge badge-green">3 进行中</span>
+    </div>
+    <div class="card-body" style="padding:12px">
+      <table class="data-table">
+        <thead>
+          <tr><th>行动</th><th>触发时间</th><th>执行人</th><th>当前状态</th><th>预计完成</th><th>效果预测</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>供应商 B-06 紧急备货</td>
+            <td>03-29 14:22</td>
+            <td>采购张总</td>
+            <td><span class="badge badge-yellow">采购中</span></td>
+            <td>04-03</td>
+            <td style="color:var(--accent-green)">+¥45万 GMV</td>
+          </tr>
+          <tr>
+            <td>3月末大促活动</td>
+            <td>03-28 09:00</td>
+            <td>营销王总</td>
+            <td><span class="badge badge-green">执行中</span></td>
+            <td>04-01</td>
+            <td style="color:var(--accent-green)">+¥120万 GMV</td>
+          </tr>
+          <tr>
+            <td>物流服务质量整改</td>
+            <td>03-27 16:40</td>
+            <td>运营李总</td>
+            <td><span class="badge badge-blue">跟进中</span></td>
+            <td>04-07</td>
+            <td style="color:var(--accent-green)">NPS +5分</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="
+  position:fixed; bottom:30px; right:30px;
+  background:rgba(10,20,40,0.95); border:1px solid var(--accent-green);
+  border-radius:10px; padding:14px 20px;
+  color:var(--text-primary); font-size:13px;
+  box-shadow:0 4px 20px rgba(0,200,83,0.3);
+  transform:translateY(80px); opacity:0;
+  transition:all 0.3s ease; z-index:9999;
+  max-width:380px;
+  ">
+  <span style="color:var(--accent-green);margin-right:8px">✅</span>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ─── CLOCK ───
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('zh-CN', { hour12: false });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ─── VIEW SWITCH ───
+const VIEWS = {
+  overview:    { el: 'view-overview',    label: '全局态势总览' },
+  attribution: { el: 'view-attribution', label: '归因分析' },
+  graph:       { el: 'view-graph',       label: '本体图谱' },
+  object:      { el: 'view-object',      label: '对象详情 · 供应商 A-03' },
+  action:      { el: 'view-action',      label: '行动中枢' }
+};
+
+let currentView = 'overview';
+let chartsInit = {};
+
+function switchView(name) {
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab')[Object.keys(VIEWS).indexOf(name)].classList.add('active');
+  document.getElementById('breadcrumb-current').textContent = VIEWS[name].label;
+  currentView = name;
+
+  // init charts lazily
+  setTimeout(() => initChartsForView(name), 50);
+}
+
+// ─── TOAST ───
+function triggerAction(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.style.transform = 'translateY(0)';
+  t.style.opacity = '1';
+  setTimeout(() => {
+    t.style.transform = 'translateY(80px)';
+    t.style.opacity = '0';
+  }, 3500);
+}
+
+// ─── CHART INIT ───
+function initChartsForView(view) {
+  if (view === 'overview' && !chartsInit.overview) {
+    chartsInit.overview = true;
+    initGMVChart();
+    initCategoryChart();
+    initSupplierChart();
+    initFunnelChart();
+    initReturnChart();
+  }
+  if (view === 'attribution' && !chartsInit.attribution) {
+    chartsInit.attribution = true;
+    initWaterfallChart();
+    initAttrCategoryChart();
+    initTimeseriesChart();
+  }
+  if (view === 'graph' && !chartsInit.graph) {
+    chartsInit.graph = true;
+    initGraphChart();
+  }
+  if (view === 'object' && !chartsInit.object) {
+    chartsInit.object = true;
+    initSupplierTrendChart();
+    initComplaintChart();
+    initQualityChart();
+  }
+}
+
+// init overview on load
+setTimeout(() => initChartsForView('overview'), 100);
+
+// ─── CHART: GMV TREND ───
+function initGMVChart() {
+  const chart = echarts.init(document.getElementById('chart-gmv'), 'dark');
+  const days = Array.from({length: 30}, (_, i) => `03/${String(i+1).padStart(2,'0')}`);
+  const categories = ['行车记录仪', '车载香薰', '脚垫', '车载支架', '其他'];
+  const colors = ['#1890ff', '#00d4ff', '#00c853', '#ffc107', '#7c4dff'];
+
+  const data = {
+    '行车记录仪': days.map((_, i) => Math.round(60 + 20*Math.sin(i/5) + (i > 20 ? -20*(i-20)/10 : 0) + Math.random()*10)),
+    '车载香薰':   days.map((_, i) => Math.round(40 + 10*Math.cos(i/4) + Math.random()*8)),
+    '脚垫':       days.map((_, i) => Math.round(30 + 5*Math.sin(i/3) + Math.random()*6)),
+    '车载支架':   days.map((_, i) => Math.round(20 + 8*Math.cos(i/6) + Math.random()*5)),
+    '其他':       days.map((_, i) => Math.round(15 + Math.random()*10)),
+  };
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    legend: { data: categories, textStyle: { color: '#8ba4c8', fontSize: 11 }, top: 4 },
+    grid: { top: 36, right: 20, bottom: 30, left: 50 },
+    xAxis: { type: 'category', data: days, axisLabel: { color: '#4a6080', fontSize: 10, interval: 4 }, axisLine: { lineStyle: { color: '#1e3a5f' } } },
+    yAxis: { type: 'value', axisLabel: { color: '#4a6080', fontSize: 10 }, splitLine: { lineStyle: { color: '#1e3a5f', type: 'dashed' } } },
+    series: categories.map((cat, ci) => ({
+      name: cat,
+      type: 'line',
+      stack: 'total',
+      areaStyle: { opacity: 0.3 },
+      smooth: true,
+      lineStyle: { width: 2 },
+      itemStyle: { color: colors[ci] },
+      data: data[cat]
+    }))
+  });
+}
+
+// ─── CHART: CATEGORY PIE ───
+function initCategoryChart() {
+  const chart = echarts.init(document.getElementById('chart-category'), 'dark');
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'item', formatter: '{b}: {d}%' },
+    legend: { orient: 'vertical', right: 10, top: 'center', textStyle: { color: '#8ba4c8', fontSize: 11 } },
+    series: [{
+      type: 'pie',
+      radius: ['45%', '72%'],
+      center: ['38%', '52%'],
+      data: [
+        { value: 29, name: '行车记录仪', itemStyle: { color: '#1890ff' } },
+        { value: 22, name: '车载香薰',   itemStyle: { color: '#00d4ff' } },
+        { value: 18, name: '脚垫',       itemStyle: { color: '#00c853' } },
+        { value: 15, name: '车载支架',   itemStyle: { color: '#ffc107' } },
+        { value: 16, name: '其他',       itemStyle: { color: '#7c4dff' } },
+      ],
+      label: { show: false },
+      emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold' } }
+    }]
+  });
+}
+
+// ─── CHART: SUPPLIER BAR ───
+function initSupplierChart() {
+  const chart = echarts.init(document.getElementById('chart-supplier'), 'dark');
+  const suppliers = ['S-B12','S-C04','S-D08','S-E01','S-F11','S-G03','S-H07','S-A03','S-I09','S-J05'];
+  const scores = [94, 91, 89, 87, 85, 82, 79, 58, 76, 72];
+  const colors = scores.map(s => s < 60 ? '#ff4d4f' : s < 80 ? '#ffc107' : '#00c853');
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis' },
+    grid: { top: 10, right: 20, bottom: 10, left: 50, containLabel: true },
+    xAxis: { type: 'value', max: 100, axisLabel: { color: '#4a6080', fontSize: 10 }, splitLine: { lineStyle: { color: '#1e3a5f', type: 'dashed' } } },
+    yAxis: { type: 'category', data: suppliers, axisLabel: { color: '#8ba4c8', fontSize: 11 } },
+    series: [{
+      type: 'bar',
+      data: scores.map((v, i) => ({ value: v, itemStyle: { color: colors[i] } })),
+      barMaxWidth: 16,
+      label: { show: true, position: 'right', color: '#8ba4c8', fontSize: 10 }
+    }]
+  });
+}
+
+// ─── CHART: FUNNEL ───
+function initFunnelChart() {
+  const chart = echarts.init(document.getElementById('chart-funnel'), 'dark');
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
+    series: [{
+      type: 'funnel',
+      left: '10%', width: '80%', top: 10, bottom: 10,
+      sort: 'descending',
+      gap: 4,
+      label: { show: true, position: 'inside', color: '#fff', fontSize: 11 },
+      data: [
+        { value: 100, name: '访问',   itemStyle: { color: '#1890ff' } },
+        { value: 64,  name: '浏览商品', itemStyle: { color: '#00d4ff' } },
+        { value: 38,  name: '加入购物车', itemStyle: { color: '#00c853' } },
+        { value: 22,  name: '下单',   itemStyle: { color: '#ffc107' } },
+        { value: 18,  name: '支付',   itemStyle: { color: '#7c4dff' } },
+      ]
+    }]
+  });
+}
+
+// ─── CHART: RETURN CAUSE ───
+function initReturnChart() {
+  const chart = echarts.init(document.getElementById('chart-return'), 'dark');
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0, textStyle: { color: '#8ba4c8', fontSize: 10 } },
+    series: [{
+      type: 'pie',
+      radius: ['35%', '60%'],
+      center: ['50%', '46%'],
+      data: [
+        { value: 38, name: '物流损毁',   itemStyle: { color: '#ff4d4f' } },
+        { value: 26, name: '与描述不符', itemStyle: { color: '#fa8c16' } },
+        { value: 18, name: '质量问题',   itemStyle: { color: '#ffc107' } },
+        { value: 11, name: '配送超时',   itemStyle: { color: '#7c4dff' } },
+        { value: 7,  name: '其他',       itemStyle: { color: '#4a6080' } },
+      ],
+      label: { show: true, formatter: '{b}\n{d}%', fontSize: 10, color: '#8ba4c8' }
+    }]
+  });
+}
+
+// ─── CHART: WATERFALL ───
+function initWaterfallChart() {
+  const chart = echarts.init(document.getElementById('chart-waterfall'), 'dark');
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { top: 20, right: 20, bottom: 60, left: 60 },
+    xAxis: {
+      type: 'category',
+      data: ['上月GMV', '客单价↓', '品类萎缩', '供应链↓', '退货↑', '其他', '本月GMV'],
+      axisLabel: { color: '#8ba4c8', fontSize: 10, rotate: 20 },
+      axisLine: { lineStyle: { color: '#1e3a5f' } }
+    },
+    yAxis: { type: 'value', axisLabel: { color: '#4a6080', fontSize: 10, formatter: v => v >= 1000 ? (v/1000)+'K' : v }, splitLine: { lineStyle: { color: '#1e3a5f', type: 'dashed' } } },
+    series: [
+      {
+        type: 'bar',
+        stack: 'all',
+        itemStyle: { color: 'transparent', borderColor: 'transparent' },
+        data: [0, 4821, 4621, 4499, 4473, 4447, 0]
+      },
+      {
+        type: 'bar',
+        stack: 'all',
+        barMaxWidth: 40,
+        data: [
+          { value: 5257, itemStyle: { color: '#1890ff' } },
+          { value: -200, itemStyle: { color: '#ff4d4f' } },
+          { value: -122, itemStyle: { color: '#fa8c16' } },
+          { value: -48,  itemStyle: { color: '#ffc107' } },
+          { value: -26,  itemStyle: { color: '#7c4dff' } },
+          { value: -40,  itemStyle: { color: '#4a6080' } },
+          { value: 4821, itemStyle: { color: '#00c853' } },
+        ],
+        label: {
+          show: true, position: 'top', color: '#8ba4c8', fontSize: 10,
+          formatter: p => {
+            const v = p.value;
+            if (p.dataIndex === 0 || p.dataIndex === 6) return v;
+            return (v > 0 ? '+' : '') + v;
+          }
+        }
+      }
+    ]
+  });
+}
+
+// ─── CHART: ATTR BY CATEGORY ───
+function initAttrCategoryChart() {
+  const chart = echarts.init(document.getElementById('chart-attr-category'), 'dark');
+  const cats = ['行车记录仪', '车载香薰', '脚垫', '车载支架', '其他'];
+  const current = [2340, 920, 720, 510, 331];
+  const prev    = [3100, 890, 740, 530, 350];
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['本月', '上月'], textStyle: { color: '#8ba4c8', fontSize: 11 }, top: 4 },
+    grid: { top: 36, right: 20, bottom: 30, left: 70 },
+    xAxis: { type: 'value', axisLabel: { color: '#4a6080', fontSize: 10 }, splitLine: { lineStyle: { color: '#1e3a5f', type: 'dashed' } } },
+    yAxis: { type: 'category', data: cats, axisLabel: { color: '#8ba4c8', fontSize: 11 } },
+    series: [
+      { name: '本月', type: 'bar', barMaxWidth: 14, data: current, itemStyle: { color: '#1890ff' } },
+      { name: '上月', type: 'bar', barMaxWidth: 14, data: prev,    itemStyle: { color: '#4a6080', opacity: 0.6 } }
+    ]
+  });
+}
+
+// ─── CHART: TIMESERIES ───
+function initTimeseriesChart() {
+  const chart = echarts.init(document.getElementById('chart-timeseries'), 'dark');
+  const days = Array.from({length: 30}, (_, i) => `03/${String(i+1).padStart(2,'0')}`);
+  const gmv = days.map((_, i) => Math.round(160 + 20*Math.sin(i/5) + (i>20 ? -3*(i-20) : 0) + Math.random()*15));
+  const clientVal = days.map((_, i) => Math.round(140 - (i>15 ? 1.2*(i-15) : 0) + Math.random()*5));
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['日GMV(万)', '客单价'], textStyle: { color: '#8ba4c8', fontSize: 11 }, top: 4 },
+    grid: { top: 36, right: 60, bottom: 30, left: 50 },
+    xAxis: { type: 'category', data: days, axisLabel: { color: '#4a6080', fontSize: 10, interval: 4 }, axisLine: { lineStyle: { color: '#1e3a5f' } } },
+    yAxis: [
+      { type: 'value', name: 'GMV', axisLabel: { color: '#4a6080', fontSize: 10 }, splitLine: { lineStyle: { color: '#1e3a5f', type: 'dashed' } } },
+      { type: 'value', name: '客单价', axisLabel: { color: '#4a6080', fontSize: 10 }, splitLine: { show: false } }
+    ],
+    series: [
+      { name: '日GMV(万)', type: 'bar', data: gmv, itemStyle: { color: 'rgba(24,144,255,0.6)' }, yAxisIndex: 0 },
+      { name: '客单价', type: 'line', smooth: true, data: clientVal, itemStyle: { color: '#ff4d4f' }, lineStyle: { width: 2 }, yAxisIndex: 1,
+        markArea: { itemStyle: { color: 'rgba(255,77,79,0.05)' }, data: [[{ name:'下滑区间', xAxis:'03/21' }, { xAxis:'03/31' }]] }
+      }
+    ]
+  });
+}
+
+// ─── CHART: KNOWLEDGE GRAPH ───
+function initGraphChart() {
+  const chart = echarts.init(document.getElementById('graph-canvas'), 'dark');
+
+  const nodes = [
+    // 品类
+    { id:'cat1', name:'行车记录仪', category:1, symbolSize:50, x:0, y:-200, value:'品类·热销' },
+    { id:'cat2', name:'车载香薰',   category:1, symbolSize:40, x:-200, y:-100 },
+    { id:'cat3', name:'脚垫',       category:1, symbolSize:38, x:200, y:-100 },
+    { id:'cat4', name:'车载支架',   category:1, symbolSize:35, x:250, y:50 },
+    // 商品
+    { id:'p1', name:'记录仪4K',  category:0, symbolSize:30, x:-80, y:-150 },
+    { id:'p2', name:'记录仪1080P', category:0, symbolSize:28, x:80, y:-170 },
+    { id:'p3', name:'高档香薰',  category:0, symbolSize:26, x:-280, y:-50 },
+    // 供应商
+    { id:'s1', name:'供应商A-03', category:2, symbolSize:55, x:-150, y:100, value:'⚠ 延迟42%' },
+    { id:'s2', name:'供应商B-07', category:2, symbolSize:42, x:150, y:120 },
+    { id:'s3', name:'供应商C-04', category:2, symbolSize:38, x:0, y:200 },
+    // 订单
+    { id:'o1', name:'延迟订单1280笔', category:3, symbolSize:38, x:-300, y:180 },
+    // 用户
+    { id:'u1', name:'高价值用户群', category:4, symbolSize:42, x:300, y:180 },
+    // 物流
+    { id:'l1', name:'顺丰速运', category:5, symbolSize:34, x:-200, y:280 },
+    { id:'l2', name:'极兔速递', category:5, symbolSize:30, x:0, y:320 },
+    // 营销
+    { id:'m1', name:'3月末大促', category:6, symbolSize:36, x:250, y:280 },
+  ];
+
+  const links = [
+    { source:'cat1', target:'p1', lineStyle: { color:'#1890ff', opacity:0.6 } },
+    { source:'cat1', target:'p2', lineStyle: { color:'#1890ff', opacity:0.6 } },
+    { source:'cat2', target:'p3', lineStyle: { color:'#1890ff', opacity:0.6 } },
+    { source:'s1', target:'p1', lineStyle: { color:'#ff4d4f', width:3, opacity:0.8 }, label: { show:true, formatter:'供货', fontSize:9, color:'#ff4d4f' } },
+    { source:'s1', target:'p2', lineStyle: { color:'#ff4d4f', width:2, opacity:0.6 } },
+    { source:'s2', target:'cat3', lineStyle: { color:'#ffc107', opacity:0.5 } },
+    { source:'s3', target:'cat4', lineStyle: { color:'#ffc107', opacity:0.5 } },
+    { source:'s1', target:'o1', lineStyle: { color:'#ff4d4f', width:2, opacity:0.7, type:'dashed' }, label: { show:true, formatter:'延迟发货', fontSize:9, color:'#ff4d4f' } },
+    { source:'o1', target:'l1', lineStyle: { color:'#00d4ff', opacity:0.5 } },
+    { source:'o1', target:'l2', lineStyle: { color:'#00d4ff', opacity:0.4, type:'dashed' } },
+    { source:'u1', target:'o1', lineStyle: { color:'#7c4dff', opacity:0.5 } },
+    { source:'m1', target:'u1', lineStyle: { color:'#eb2f96', opacity:0.5 } },
+    { source:'m1', target:'cat2', lineStyle: { color:'#eb2f96', opacity:0.4 } },
+  ];
+
+  const catColors = ['#1890ff', '#00c853', '#ffc107', '#ff4d4f', '#7c4dff', '#00d4ff', '#eb2f96'];
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      formatter: p => p.data.value
+        ? `<b style="color:${catColors[p.data.category]}">${p.data.name}</b><br>${p.data.value}`
+        : `<b>${p.data.name}</b>`
+    },
+    legend: [{
+      data: ['商品','品类','供应商','订单','用户','物流','营销活动'],
+      textStyle: { color: '#8ba4c8', fontSize: 11 },
+      bottom: 10
+    }],
+    series: [{
+      type: 'graph',
+      layout: 'force',
+      roam: true,
+      draggable: true,
+      force: { repulsion: 200, edgeLength: 120, gravity: 0.1 },
+      categories: [
+        { name:'商品',   itemStyle:{ color:'#1890ff' } },
+        { name:'品类',   itemStyle:{ color:'#00c853' } },
+        { name:'供应商', itemStyle:{ color:'#ffc107' } },
+        { name:'订单',   itemStyle:{ color:'#ff4d4f' } },
+        { name:'用户',   itemStyle:{ color:'#7c4dff' } },
+        { name:'物流',   itemStyle:{ color:'#00d4ff' } },
+        { name:'营销活动', itemStyle:{ color:'#eb2f96' } },
+      ],
+      data: nodes.map(n => ({
+        ...n,
+        itemStyle: { color: catColors[n.category], borderColor: n.id === 's1' ? '#ff4d4f' : 'transparent', borderWidth: n.id === 's1' ? 3 : 0 },
+        label: { show: true, color: '#e8edf5', fontSize: 10 }
+      })),
+      links: links,
+      lineStyle: { curveness: 0.2, opacity: 0.6 },
+      emphasis: {
+        focus: 'adjacency',
+        lineStyle: { width: 3 }
+      }
+    }]
+  });
+
+  chart.on('click', p => {
+    if (p.dataType === 'node') {
+      if (p.data.id && p.data.id.startsWith('s')) switchView('object');
+    }
+  });
+}
+
+// ─── CHART: SUPPLIER TREND ───
+function initSupplierTrendChart() {
+  const chart = echarts.init(document.getElementById('chart-supplier-trend'), 'dark');
+  const months = ['10月', '11月', '12月', '01月', '02月', '03月'];
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['履约评分', '发货延迟率%'], textStyle: { color: '#8ba4c8', fontSize: 11 }, top: 4 },
+    grid: { top: 40, right: 60, bottom: 30, left: 50 },
+    xAxis: { type: 'category', data: months, axisLabel: { color: '#8ba4c8', fontSize: 11 }, axisLine: { lineStyle: { color: '#1e3a5f' } } },
+    yAxis: [
+      { type: 'value', name: '评分', min: 40, max: 100, axisLabel: { color: '#4a6080', fontSize: 10 }, splitLine: { lineStyle: { color: '#1e3a5f', type: 'dashed' } } },
+      { type: 'value', name: '延迟率%', min: 0, max: 60, axisLabel: { color: '#4a6080', fontSize: 10 }, splitLine: { show: false } }
+    ],
+    series: [
+      { name:'履约评分', type:'line', smooth:true, data:[88, 85, 82, 76, 68, 58],
+        lineStyle:{ color:'#ffc107', width:2 }, itemStyle:{ color:'#ffc107' },
+        areaStyle:{ color:'rgba(255,193,7,0.1)' }, yAxisIndex:0 },
+      { name:'发货延迟率%', type:'bar', data:[8, 12, 16, 22, 31, 42],
+        itemStyle:{ color: p => p.value > 30 ? '#ff4d4f' : '#fa8c16' }, barMaxWidth:20, yAxisIndex:1 }
+    ]
+  });
+}
+
+// ─── CHART: COMPLAINT ───
+function initComplaintChart() {
+  const chart = echarts.init(document.getElementById('chart-complaint'), 'dark');
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'item' },
+    series: [{
+      type: 'pie', radius: ['40%', '65%'], center: ['50%', '50%'],
+      data: [
+        { value: 52, name: '发货延迟', itemStyle: { color: '#ff4d4f' } },
+        { value: 28, name: '质量问题', itemStyle: { color: '#fa8c16' } },
+        { value: 20, name: '其他',     itemStyle: { color: '#4a6080' } },
+      ],
+      label: { show: true, formatter: '{b}\n{d}%', fontSize: 10, color: '#8ba4c8' }
+    }]
+  });
+}
+
+// ─── CHART: QUALITY ───
+function initQualityChart() {
+  const chart = echarts.init(document.getElementById('chart-quality'), 'dark');
+  const months = ['10月','11月','12月','01月','02月','03月'];
+  const scores = [92, 90, 88, 84, 80, 74];
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis' },
+    grid: { top: 10, right: 20, bottom: 30, left: 40 },
+    xAxis: { type:'category', data:months, axisLabel:{ color:'#8ba4c8', fontSize:10 }, axisLine:{ lineStyle:{ color:'#1e3a5f' } } },
+    yAxis: { type:'value', min:60, max:100, axisLabel:{ color:'#4a6080', fontSize:10 }, splitLine:{ lineStyle:{ color:'#1e3a5f', type:'dashed' } } },
+    series: [{
+      type: 'line', smooth: true,
+      data: scores,
+      lineStyle: { color: '#00c853', width: 2 },
+      itemStyle: { color: p => p.value < 80 ? '#ff4d4f' : '#00c853' },
+      areaStyle: { color: 'rgba(0,200,83,0.1)' },
+      markLine: { data: [{ yAxis: 80, lineStyle: { color: '#ffc107', type: 'dashed' }, label: { formatter: '红线80', color: '#ffc107', fontSize: 10 } }] }
+    }]
+  });
+}
+</script>
+</body>
+</html>
