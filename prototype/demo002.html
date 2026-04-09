@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>好物商城数据驾驶舱 · Demo 002</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #0d1b2a; color: #e0e6f0; min-height: 100vh; }
+
+  /* ===== Header ===== */
+  .header { display: flex; align-items: center; justify-content: space-between; background: #112233; padding: 0 24px; height: 56px; border-bottom: 1px solid #1e3a5f; }
+  .logo { font-size: 18px; font-weight: 700; color: #4fc3f7; letter-spacing: 1px; }
+  .logo span { color: #fff; }
+  .header-right { font-size: 13px; color: #7ea8c9; }
+
+  /* ===== Tabs ===== */
+  .tabs { display: flex; background: #0d1b2a; border-bottom: 1px solid #1e3a5f; padding: 0 24px; }
+  .tab { padding: 14px 22px; font-size: 14px; cursor: pointer; color: #7ea8c9; border-bottom: 2px solid transparent; transition: all .2s; white-space: nowrap; }
+  .tab:hover { color: #4fc3f7; }
+  .tab.active { color: #4fc3f7; border-bottom-color: #4fc3f7; font-weight: 600; }
+
+  /* ===== Filter bar ===== */
+  .filterbar { display: flex; align-items: center; gap: 12px; padding: 12px 24px; background: #0f2035; border-bottom: 1px solid #1e3a5f; font-size: 13px; }
+  .filterbar label { color: #7ea8c9; }
+  .filterbar select { background: #112233; color: #e0e6f0; border: 1px solid #1e3a5f; border-radius: 4px; padding: 4px 8px; font-size: 13px; cursor: pointer; }
+
+  /* ===== Pages ===== */
+  .page { display: none; padding: 20px 24px; }
+  .page.active { display: block; }
+
+  /* ===== Section titles ===== */
+  .section-title { font-size: 14px; font-weight: 600; color: #7ea8c9; margin-bottom: 12px; padding-left: 8px; border-left: 3px solid #4fc3f7; }
+
+  /* ===== KPI Cards ===== */
+  .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: #112233; border-radius: 8px; padding: 14px 16px; border: 1px solid #1e3a5f; }
+  .kpi-label { font-size: 12px; color: #7ea8c9; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 700; color: #fff; }
+  .kpi-value.green { color: #4caf50; }
+  .kpi-value.red { color: #ef5350; }
+  .kpi-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; }
+  .kpi-target { color: #7ea8c9; }
+  .kpi-trend { font-weight: 600; }
+  .kpi-trend.up { color: #4caf50; }
+  .kpi-trend.down { color: #ef5350; }
+  .kpi-rate { font-size: 11px; color: #7ea8c9; margin-top: 4px; }
+  .rate-bar { height: 4px; background: #1e3a5f; border-radius: 2px; margin-top: 4px; }
+  .rate-fill { height: 100%; border-radius: 2px; background: #4fc3f7; }
+  .rate-fill.good { background: #4caf50; }
+  .rate-fill.warn { background: #ffb300; }
+  .rate-fill.bad { background: #ef5350; }
+
+  /* ===== Progress forecast bar ===== */
+  .forecast-bar { background: #112233; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; border: 1px solid #1e3a5f; }
+  .forecast-bar h4 { font-size: 13px; color: #7ea8c9; margin-bottom: 10px; }
+  .progress-track { position: relative; height: 24px; background: #1e3a5f; border-radius: 12px; overflow: hidden; }
+  .progress-done { position: absolute; left: 0; top: 0; height: 100%; background: #4caf50; border-radius: 12px 0 0 12px; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 600; color: #fff; }
+  .progress-forecast { position: absolute; top: 0; height: 100%; background: rgba(79,195,247,.4); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; color: #4fc3f7; }
+  .progress-target-line { position: absolute; top: 0; height: 100%; width: 2px; background: #ffb300; }
+  .progress-legend { display: flex; gap: 20px; margin-top: 8px; font-size: 11px; color: #7ea8c9; }
+  .progress-legend span::before { content: '■ '; }
+  .progress-legend .done::before { color: #4caf50; }
+  .progress-legend .fcast::before { color: rgba(79,195,247,.7); }
+  .progress-legend .target::before { color: #ffb300; }
+
+  /* ===== Two-col layout ===== */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* ===== Chart Card ===== */
+  .chart-card { background: #112233; border-radius: 8px; padding: 16px; border: 1px solid #1e3a5f; }
+  .chart-card h4 { font-size: 13px; color: #7ea8c9; margin-bottom: 12px; }
+  .chart-placeholder { position: relative; }
+
+  /* ===== SVG Charts ===== */
+  svg.chart { width: 100%; overflow: visible; }
+
+  /* ===== Table ===== */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th { background: #0d1b2a; color: #7ea8c9; padding: 8px 10px; text-align: left; border-bottom: 1px solid #1e3a5f; }
+  .data-table td { padding: 8px 10px; border-bottom: 1px solid #162a3f; }
+  .data-table tr:hover td { background: #162a3f; }
+  .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+  .badge.up { background: rgba(76,175,80,.15); color: #4caf50; }
+  .badge.down { background: rgba(239,83,80,.15); color: #ef5350; }
+  .badge.warn { background: rgba(255,179,0,.15); color: #ffb300; }
+  .badge.info { background: rgba(79,195,247,.15); color: #4fc3f7; }
+
+  /* ===== Alert list ===== */
+  .alert-list { display: flex; flex-direction: column; gap: 8px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 10px; background: #112233; border-radius: 6px; padding: 10px 14px; border-left: 3px solid #ef5350; cursor: pointer; transition: background .2s; }
+  .alert-item:hover { background: #162a3f; }
+  .alert-item.warn { border-left-color: #ffb300; }
+  .alert-item.info { border-left-color: #4fc3f7; }
+  .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert-body { flex: 1; }
+  .alert-title { font-size: 13px; font-weight: 600; color: #e0e6f0; }
+  .alert-desc { font-size: 12px; color: #7ea8c9; margin-top: 3px; }
+  .alert-time { font-size: 11px; color: #4a6a80; flex-shrink: 0; }
+
+  /* ===== Waterfall chart ===== */
+  .waterfall-label { font-size: 11px; fill: #7ea8c9; }
+  .waterfall-value { font-size: 11px; fill: #fff; }
+
+  /* ===== Heatmap ===== */
+  .heatmap-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .heatmap-table th { color: #7ea8c9; padding: 4px 6px; text-align: center; border: none; }
+  .heatmap-table td { padding: 4px 6px; text-align: center; border: 1px solid #0d1b2a; border-radius: 3px; }
+
+  /* ===== Channel tabs ===== */
+  .sub-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .sub-tab { padding: 6px 16px; font-size: 12px; border-radius: 4px; cursor: pointer; background: #1e3a5f; color: #7ea8c9; border: 1px solid #1e3a5f; transition: all .2s; }
+  .sub-tab.active, .sub-tab:hover { background: #4fc3f7; color: #0d1b2a; font-weight: 600; }
+
+  /* ===== Donut Chart ===== */
+  .donut-legend { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #7ea8c9; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">🚗 <span>好物商城</span> 数据驾驶舱</div>
+  <div class="header-right">Demo 002 · 原型演示 · 数据仅供展示</div>
+</div>
+
+<!-- Main Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="switchPage(0)">🏠 全局预览</div>
+  <div class="tab" onclick="switchPage(1)">📡 渠道详情</div>
+  <div class="tab" onclick="switchPage(2)">📦 产品分析</div>
+  <div class="tab" onclick="switchPage(3)">🔍 归因分析</div>
+  <div class="tab" onclick="switchPage(4)">🔔 异常告警</div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filterbar">
+  <label>月份：</label>
+  <select id="monthFilter" onchange="updateCharts()">
+    <option>2025-04</option><option>2025-03</option><option>2025-02</option>
+    <option>2025-01</option><option>2024-12</option><option>2024-11</option>
+  </select>
+  <label>渠道：</label>
+  <select id="channelFilter" onchange="updateCharts()">
+    <option>全部</option><option>终端门店</option><option>APP商城</option><option>内销</option><option>其他</option>
+  </select>
+  <label>产品线：</label>
+  <select id="productFilter" onchange="updateCharts()">
+    <option>全部</option><option>车生长</option><option>车改装</option><option>车生活</option>
+  </select>
+</div>
+
+<!-- ========== PAGE 0: 全局预览 ========== -->
+<div class="page active" id="page-0">
+  <div class="section-title">核心 KPI 指标</div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">💰 销售额 (万元)</div>
+      <div class="kpi-value">3,248</div>
+      <div class="kpi-meta">
+        <span class="kpi-target">目标 3,500</span>
+        <span class="kpi-trend up">↑ +8.3%</span>
+      </div>
+      <div class="kpi-rate">完成率 92.8%</div>
+      <div class="rate-bar"><div class="rate-fill warn" style="width:92.8%"></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">📊 毛利 (万元)</div>
+      <div class="kpi-value">812</div>
+      <div class="kpi-meta">
+        <span class="kpi-target">目标 900</span>
+        <span class="kpi-trend down">↓ -2.1%</span>
+      </div>
+      <div class="kpi-rate">完成率 90.2%</div>
+      <div class="rate-bar"><div class="rate-fill warn" style="width:90.2%"></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">💵 净利润 (万元)</div>
+      <div class="kpi-value">318</div>
+      <div class="kpi-meta">
+        <span class="kpi-target">目标 360</span>
+        <span class="kpi-trend down">↓ -4.5%</span>
+      </div>
+      <div class="kpi-rate">完成率 88.3%</div>
+      <div class="rate-bar"><div class="rate-fill bad" style="width:88.3%"></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">✅ T3完成率</div>
+      <div class="kpi-value green">97.4%</div>
+      <div class="kpi-meta">
+        <span class="kpi-target">目标 95%</span>
+        <span class="kpi-trend up">↑ +2.4pp</span>
+      </div>
+      <div class="kpi-rate">超额达成</div>
+      <div class="rate-bar"><div class="rate-fill good" style="width:97.4%"></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">🚗 提车量 (辆)</div>
+      <div class="kpi-value">1,842</div>
+      <div class="kpi-meta">
+        <span class="kpi-target">目标 2,000</span>
+        <span class="kpi-trend up">↑ +5.2%</span>
+      </div>
+      <div class="kpi-rate">完成率 92.1%</div>
+      <div class="rate-bar"><div class="rate-fill warn" style="width:92.1%"></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">🎯 渗透率</div>
+      <div class="kpi-value red">68.2%</div>
+      <div class="kpi-meta">
+        <span class="kpi-target">目标 75%</span>
+        <span class="kpi-trend down">↓ -3.1pp</span>
+      </div>
+      <div class="kpi-rate">完成率 90.9%</div>
+      <div class="rate-bar"><div class="rate-fill bad" style="width:90.9%"></div></div>
+    </div>
+  </div>
+
+  <!-- Progress forecast -->
+  <div class="forecast-bar">
+    <h4>本月销售进度预测（基于当前日期推算）</h4>
+    <div class="progress-track">
+      <div class="progress-done" style="width:62%">已达成 62%</div>
+      <div class="progress-forecast" style="left:62%;width:28%">预测 90%</div>
+      <div class="progress-target-line" style="left:88%"></div>
+    </div>
+    <div class="progress-legend">
+      <span class="done">已完成 (3,248万)</span>
+      <span class="fcast">预测新增 (约 1,142万)</span>
+      <span class="target">月度目标线 (3,500万)</span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- Channel Contribution Donut -->
+    <div class="chart-card">
+      <h4>渠道贡献度分布</h4>
+      <svg class="chart" height="160" viewBox="0 0 300 160">
+        <!-- Donut segments: terminal 42%, app 31%, other 15%, domestic 12% -->
+        <circle cx="100" cy="80" r="55" fill="none" stroke="#1e3a5f" stroke-width="30"/>
+        <circle cx="100" cy="80" r="55" fill="none" stroke="#4fc3f7" stroke-width="30"
+          stroke-dasharray="145.4 200" stroke-dashoffset="0" transform="rotate(-90 100 80)"/>
+        <circle cx="100" cy="80" r="55" fill="none" stroke="#4caf50" stroke-width="30"
+          stroke-dasharray="107.4 200" stroke-dashoffset="-145.4" transform="rotate(-90 100 80)"/>
+        <circle cx="100" cy="80" r="55" fill="none" stroke="#ffb300" stroke-width="30"
+          stroke-dasharray="52 200" stroke-dashoffset="-252.8" transform="rotate(-90 100 80)"/>
+        <circle cx="100" cy="80" r="55" fill="none" stroke="#ab47bc" stroke-width="30"
+          stroke-dasharray="41.6 200" stroke-dashoffset="-304.8" transform="rotate(-90 100 80)"/>
+        <text x="100" y="76" text-anchor="middle" fill="#e0e6f0" font-size="14" font-weight="700">销售额</text>
+        <text x="100" y="92" text-anchor="middle" fill="#7ea8c9" font-size="11">渠道占比</text>
+        <!-- Legend -->
+        <rect x="170" y="20" width="10" height="10" rx="2" fill="#4fc3f7"/>
+        <text x="184" y="30" fill="#7ea8c9" font-size="11">终端门店 42%</text>
+        <rect x="170" y="42" width="10" height="10" rx="2" fill="#4caf50"/>
+        <text x="184" y="52" fill="#7ea8c9" font-size="11">APP商城 31%</text>
+        <rect x="170" y="64" width="10" height="10" rx="2" fill="#ffb300"/>
+        <text x="184" y="74" fill="#7ea8c9" font-size="11">其他渠道 15%</text>
+        <rect x="170" y="86" width="10" height="10" rx="2" fill="#ab47bc"/>
+        <text x="184" y="96" fill="#7ea8c9" font-size="11">内销 12%</text>
+      </svg>
+    </div>
+
+    <!-- Monthly Trend Bar+Line -->
+    <div class="chart-card">
+      <h4>近6月销售额趋势 vs 目标</h4>
+      <svg class="chart" height="160" viewBox="0 0 340 160">
+        <!-- Axes -->
+        <line x1="40" y1="10" x2="40" y2="130" stroke="#1e3a5f" stroke-width="1"/>
+        <line x1="40" y1="130" x2="330" y2="130" stroke="#1e3a5f" stroke-width="1"/>
+        <!-- Y-axis labels -->
+        <text x="35" y="14" fill="#7ea8c9" font-size="9" text-anchor="end">4000</text>
+        <text x="35" y="50" fill="#7ea8c9" font-size="9" text-anchor="end">3500</text>
+        <text x="35" y="90" fill="#7ea8c9" font-size="9" text-anchor="end">3000</text>
+        <text x="35" y="130" fill="#7ea8c9" font-size="9" text-anchor="end">2500</text>
+        <!-- Grid -->
+        <line x1="40" y1="50" x2="330" y2="50" stroke="#1e3a5f" stroke-dasharray="4 4" stroke-width="1"/>
+        <line x1="40" y1="90" x2="330" y2="90" stroke="#1e3a5f" stroke-dasharray="4 4" stroke-width="1"/>
+        <!-- Bars: months Nov-Apr, values in range 2500-3800 -->
+        <!-- Bar widths: 6 bars, space 290px, bar=28, gap=20 -->
+        <rect x="50" y="52" width="28" height="78" fill="#1a4a6b" rx="2"/>
+        <rect x="98" y="45" width="28" height="85" fill="#1a4a6b" rx="2"/>
+        <rect x="146" y="40" width="28" height="90" fill="#1a4a6b" rx="2"/>
+        <rect x="194" y="30" width="28" height="100" fill="#1a4a6b" rx="2"/>
+        <rect x="242" y="35" width="28" height="95" fill="#1a4a6b" rx="2"/>
+        <rect x="290" y="28" width="28" height="102" fill="#2a6496" rx="2"/>
+        <!-- Month labels -->
+        <text x="64" y="145" fill="#7ea8c9" font-size="9" text-anchor="middle">11月</text>
+        <text x="112" y="145" fill="#7ea8c9" font-size="9" text-anchor="middle">12月</text>
+        <text x="160" y="145" fill="#7ea8c9" font-size="9" text-anchor="middle">1月</text>
+        <text x="208" y="145" fill="#7ea8c9" font-size="9" text-anchor="middle">2月</text>
+        <text x="256" y="145" fill="#7ea8c9" font-size="9" text-anchor="middle">3月</text>
+        <text x="304" y="145" fill="#7ea8c9" font-size="9" text-anchor="middle">4月</text>
+        <!-- Target line -->
+        <line x1="40" y1="50" x2="330" y2="50" stroke="#ffb300" stroke-width="1.5" stroke-dasharray="6 3"/>
+        <text x="332" y="54" fill="#ffb300" font-size="9">目标</text>
+        <!-- Trend line -->
+        <polyline points="64,52 112,45 160,40 208,30 256,35 304,28" fill="none" stroke="#4fc3f7" stroke-width="2"/>
+        <circle cx="64" cy="52" r="3" fill="#4fc3f7"/>
+        <circle cx="112" cy="45" r="3" fill="#4fc3f7"/>
+        <circle cx="160" cy="40" r="3" fill="#4fc3f7"/>
+        <circle cx="208" cy="30" r="3" fill="#4fc3f7"/>
+        <circle cx="256" cy="35" r="3" fill="#4fc3f7"/>
+        <circle cx="304" cy="28" r="4" fill="#4fc3f7" stroke="#fff" stroke-width="1.5"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Alerts summary -->
+  <div class="section-title">⚠️ 异常告警摘要 (Top 3)</div>
+  <div class="alert-list">
+    <div class="alert-item" onclick="switchPage(4)">
+      <div class="alert-icon">🔴</div>
+      <div class="alert-body">
+        <div class="alert-title">车生活产品线渗透率连续3个月下滑</div>
+        <div class="alert-desc">当前 54.2%，低于目标 75%，已触发严重告警阈值，建议立即排查促销策略</div>
+      </div>
+      <div class="alert-time">今日 08:30</div>
+    </div>
+    <div class="alert-item warn" onclick="switchPage(4)">
+      <div class="alert-icon">🟡</div>
+      <div class="alert-body">
+        <div class="alert-title">APP商城客单价环比下降 12%</div>
+        <div class="alert-desc">4月客单价 186元，3月为 211元，结合流量增长分析是否引入低价引流品</div>
+      </div>
+      <div class="alert-time">今日 07:15</div>
+    </div>
+    <div class="alert-item info" onclick="switchPage(4)">
+      <div class="alert-icon">🔵</div>
+      <div class="alert-body">
+        <div class="alert-title">华南大区本月销售额超出目标 18%</div>
+        <div class="alert-desc">可提炼成功经验推广至其他大区，重点关注华南终端陈列与活动节奏</div>
+      </div>
+      <div class="alert-time">昨日 22:00</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PAGE 1: 渠道详情 ========== -->
+<div class="page" id="page-1">
+  <div class="sub-tabs">
+    <div class="sub-tab active" onclick="switchSubTab(this,'ch')">终端门店</div>
+    <div class="sub-tab" onclick="switchSubTab(this,'ch')">APP 商城</div>
+    <div class="sub-tab" onclick="switchSubTab(this,'ch')">内销</div>
+    <div class="sub-tab" onclick="switchSubTab(this,'ch')">其他渠道</div>
+  </div>
+
+  <div class="two-col">
+    <!-- Region ranking -->
+    <div class="chart-card">
+      <h4>大区销售排行</h4>
+      <svg class="chart" height="180" viewBox="0 0 300 180">
+        <!-- Horizontal bars -->
+        <text x="5" y="22" fill="#7ea8c9" font-size="11">华南</text>
+        <rect x="50" y="10" width="180" height="16" fill="#4fc3f7" rx="2"/>
+        <text x="234" y="22" fill="#fff" font-size="11">812万 ↑18%</text>
+
+        <text x="5" y="54" fill="#7ea8c9" font-size="11">华东</text>
+        <rect x="50" y="42" width="155" height="16" fill="#4fc3f7" rx="2" opacity=".85"/>
+        <text x="209" y="54" fill="#fff" font-size="11">702万 ↑9%</text>
+
+        <text x="5" y="86" fill="#7ea8c9" font-size="11">华北</text>
+        <rect x="50" y="74" width="128" height="16" fill="#4fc3f7" rx="2" opacity=".7"/>
+        <text x="182" y="86" fill="#fff" font-size="11">580万 +4%</text>
+
+        <text x="5" y="118" fill="#7ea8c9" font-size="11">西南</text>
+        <rect x="50" y="106" width="100" height="16" fill="#ffb300" rx="2" opacity=".85"/>
+        <text x="154" y="118" fill="#fff" font-size="11">450万 -2%</text>
+
+        <text x="5" y="150" fill="#7ea8c9" font-size="11">华中</text>
+        <rect x="50" y="138" width="88" height="16" fill="#ffb300" rx="2" opacity=".7"/>
+        <text x="142" y="150" fill="#fff" font-size="11">398万 -5%</text>
+
+        <text x="5" y="182" fill="#7ea8c9" font-size="11">东北</text>
+        <rect x="50" y="170" width="60" height="16" fill="#ef5350" rx="2" opacity=".8"/>
+        <text x="114" y="182" fill="#fff" font-size="11">270万 ↓11%</text>
+      </svg>
+    </div>
+
+    <!-- Top dealer table -->
+    <div class="chart-card">
+      <h4>Top 经销商 (终端)</h4>
+      <table class="data-table">
+        <thead>
+          <tr><th>经销商</th><th>销售额</th><th>完成率</th><th>环比</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>广州星汇</td><td>248万</td><td>112%</td><td><span class="badge up">↑+12%</span></td></tr>
+          <tr><td>深圳速驰</td><td>196万</td><td>108%</td><td><span class="badge up">↑+8%</span></td></tr>
+          <tr><td>上海驰跑</td><td>182万</td><td>104%</td><td><span class="badge up">↑+4%</span></td></tr>
+          <tr><td>北京车宝</td><td>151万</td><td>92%</td><td><span class="badge warn">-2%</span></td></tr>
+          <tr><td>成都摩速</td><td>138万</td><td>88%</td><td><span class="badge down">↓-8%</span></td></tr>
+          <tr><td>武汉改行</td><td>112万</td><td>80%</td><td><span class="badge down">↓-15%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- APP channel analysis -->
+  <div class="section-title">APP 商城 · 流量 × 转化 × 客单价</div>
+  <div class="three-col">
+    <div class="chart-card">
+      <h4>访客量趋势</h4>
+      <svg class="chart" height="100" viewBox="0 0 220 100">
+        <polyline points="10,80 40,65 70,55 100,45 130,50 160,40 190,30" fill="none" stroke="#4caf50" stroke-width="2"/>
+        <circle cx="190" cy="30" r="4" fill="#4caf50"/>
+        <text x="10" y="95" fill="#7ea8c9" font-size="9">11月</text>
+        <text x="190" y="95" fill="#7ea8c9" font-size="9" text-anchor="end">4月</text>
+        <text x="195" y="34" fill="#4caf50" font-size="10">↑8.2%</text>
+      </svg>
+    </div>
+    <div class="chart-card">
+      <h4>转化率趋势</h4>
+      <svg class="chart" height="100" viewBox="0 0 220 100">
+        <polyline points="10,40 40,45 70,50 100,55 130,60 160,65 190,70" fill="none" stroke="#ef5350" stroke-width="2"/>
+        <circle cx="190" cy="70" r="4" fill="#ef5350"/>
+        <text x="10" y="95" fill="#7ea8c9" font-size="9">11月</text>
+        <text x="190" y="95" fill="#7ea8c9" font-size="9" text-anchor="end">4月</text>
+        <text x="195" y="74" fill="#ef5350" font-size="10">↓3.2%</text>
+      </svg>
+    </div>
+    <div class="chart-card">
+      <h4>客单价趋势</h4>
+      <svg class="chart" height="100" viewBox="0 0 220 100">
+        <polyline points="10,40 40,38 70,42 100,45 130,50 160,58 190,68" fill="none" stroke="#ffb300" stroke-width="2"/>
+        <circle cx="190" cy="68" r="4" fill="#ffb300"/>
+        <text x="10" y="95" fill="#7ea8c9" font-size="9">11月</text>
+        <text x="190" y="95" fill="#7ea8c9" font-size="9" text-anchor="end">4月</text>
+        <text x="150" y="62" fill="#ffb300" font-size="10">↓12%</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PAGE 2: 产品分析 ========== -->
+<div class="page" id="page-2">
+  <div class="two-col">
+    <!-- Product share donut -->
+    <div class="chart-card">
+      <h4>分产品销售占比</h4>
+      <svg class="chart" height="180" viewBox="0 0 300 180">
+        <circle cx="100" cy="90" r="65" fill="none" stroke="#1e3a5f" stroke-width="35"/>
+        <!-- 车生长 45% -->
+        <circle cx="100" cy="90" r="65" fill="none" stroke="#4fc3f7" stroke-width="35"
+          stroke-dasharray="183.2 408.4" stroke-dashoffset="0" transform="rotate(-90 100 90)"/>
+        <!-- 车改装 32% -->
+        <circle cx="100" cy="90" r="65" fill="none" stroke="#4caf50" stroke-width="35"
+          stroke-dasharray="130.7 408.4" stroke-dashoffset="-183.2" transform="rotate(-90 100 90)"/>
+        <!-- 车生活 23% -->
+        <circle cx="100" cy="90" r="65" fill="none" stroke="#ffb300" stroke-width="35"
+          stroke-dasharray="93.9 408.4" stroke-dashoffset="-313.9" transform="rotate(-90 100 90)"/>
+        <text x="100" y="86" text-anchor="middle" fill="#e0e6f0" font-size="13" font-weight="700">产品</text>
+        <text x="100" y="102" text-anchor="middle" fill="#7ea8c9" font-size="11">结构</text>
+        <!-- Legend -->
+        <rect x="185" y="40" width="12" height="12" rx="2" fill="#4fc3f7"/>
+        <text x="201" y="51" fill="#7ea8c9" font-size="11">车生长 45%</text>
+        <rect x="185" y="68" width="12" height="12" rx="2" fill="#4caf50"/>
+        <text x="201" y="79" fill="#7ea8c9" font-size="11">车改装 32%</text>
+        <rect x="185" y="96" width="12" height="12" rx="2" fill="#ffb300"/>
+        <text x="201" y="107" fill="#7ea8c9" font-size="11">车生活 23%</text>
+      </svg>
+    </div>
+
+    <!-- Product penetration line chart -->
+    <div class="chart-card">
+      <h4>分产品渗透率趋势</h4>
+      <svg class="chart" height="180" viewBox="0 0 300 180">
+        <line x1="30" y1="10" x2="30" y2="150" stroke="#1e3a5f"/>
+        <line x1="30" y1="150" x2="295" y2="150" stroke="#1e3a5f"/>
+        <text x="25" y="14" fill="#7ea8c9" font-size="9" text-anchor="end">100%</text>
+        <text x="25" y="80" fill="#7ea8c9" font-size="9" text-anchor="end">70%</text>
+        <text x="25" y="150" fill="#7ea8c9" font-size="9" text-anchor="end">40%</text>
+        <!-- Grid -->
+        <line x1="30" y1="80" x2="295" y2="80" stroke="#1e3a5f" stroke-dasharray="4"/>
+        <!-- Car growth line (车生长) ~ 78-82% -->
+        <polyline points="45,50 90,45 135,52 180,48 225,44 270,42" fill="none" stroke="#4fc3f7" stroke-width="2"/>
+        <!-- Car modify (车改装) ~ 68-72% -->
+        <polyline points="45,74 90,70 135,72 180,68 225,70 270,66" fill="none" stroke="#4caf50" stroke-width="2"/>
+        <!-- Car life (车生活) - declining -->
+        <polyline points="45,88 90,95 135,102 180,108 225,114 270,120" fill="none" stroke="#ef5350" stroke-width="2" stroke-dasharray="5 3"/>
+        <!-- Legend -->
+        <rect x="180" y="155" width="8" height="8" fill="#4fc3f7"/>
+        <text x="191" y="163" fill="#7ea8c9" font-size="9">车生长</text>
+        <rect x="220" y="155" width="8" height="8" fill="#4caf50"/>
+        <text x="231" y="163" fill="#7ea8c9" font-size="9">车改装</text>
+        <rect x="260" y="155" width="8" height="8" fill="#ef5350"/>
+        <text x="271" y="163" fill="#7ea8c9" font-size="9">车生活↓</text>
+        <!-- X labels -->
+        <text x="45" y="165" fill="#7ea8c9" font-size="9" text-anchor="middle">11月</text>
+        <text x="270" y="165" fill="#7ea8c9" font-size="9" text-anchor="middle">4月</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Product line table -->
+  <div class="section-title">产品线明细 (T1N ~ T6)</div>
+  <div class="chart-card">
+    <table class="data-table">
+      <thead>
+        <tr><th>产品线</th><th>销售额</th><th>完成率</th><th>渗透率</th><th>环比</th><th>趋势</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>T1N 基础养护</td><td>682万</td><td>105%</td><td>84%</td><td><span class="badge up">↑+5%</span></td><td>📈</td></tr>
+        <tr><td>T2N 智能行车</td><td>521万</td><td>98%</td><td>76%</td><td><span class="badge warn">±0%</span></td><td>➡️</td></tr>
+        <tr><td>T3N 车载娱乐</td><td>487万</td><td>94%</td><td>71%</td><td><span class="badge warn">-2%</span></td><td>📉</td></tr>
+        <tr><td>T4N 外观改装</td><td>412万</td><td>88%</td><td>65%</td><td><span class="badge down">↓-8%</span></td><td>📉</td></tr>
+        <tr><td>T5N 内饰升级</td><td>378万</td><td>82%</td><td>58%</td><td><span class="badge down">↓-10%</span></td><td>📉</td></tr>
+        <tr><td>T6N 生活周边</td><td>290万</td><td>78%</td><td>54%</td><td><span class="badge down">↓-14%</span></td><td>📉</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== PAGE 3: 归因分析 ========== -->
+<div class="page" id="page-3">
+  <div class="two-col">
+    <!-- Waterfall -->
+    <div class="chart-card">
+      <h4>销售额差距拆解 · 量价瀑布图</h4>
+      <svg class="chart" height="220" viewBox="0 0 320 220">
+        <!-- Axis -->
+        <line x1="20" y1="10" x2="20" y2="190" stroke="#1e3a5f"/>
+        <line x1="20" y1="190" x2="310" y2="190" stroke="#1e3a5f"/>
+        <!-- Y labels -->
+        <text x="16" y="14" fill="#7ea8c9" font-size="9" text-anchor="end">+300</text>
+        <text x="16" y="90" fill="#7ea8c9" font-size="9" text-anchor="end">0</text>
+        <text x="16" y="190" fill="#7ea8c9" font-size="9" text-anchor="end">-300</text>
+        <!-- Zero line -->
+        <line x1="20" y1="90" x2="310" y2="90" stroke="#1e3a5f" stroke-dasharray="4"/>
+        <!-- Bars: base, volume+, price-, mix+, other-, result -->
+        <!-- Base (neutral) -->
+        <rect x="30" y="50" width="30" height="40" fill="#4fc3f7" rx="2"/>
+        <text x="45" y="45" fill="#4fc3f7" font-size="9" text-anchor="middle">基期</text>
+        <text x="45" y="200" fill="#7ea8c9" font-size="9" text-anchor="middle">基期</text>
+        <!-- Volume positive -->
+        <rect x="75" y="60" width="30" height="30" fill="#4caf50" rx="2"/>
+        <text x="90" y="55" fill="#4caf50" font-size="9" text-anchor="middle">+量</text>
+        <text x="90" y="200" fill="#7ea8c9" font-size="9" text-anchor="middle">量贡献</text>
+        <!-- Price negative -->
+        <rect x="120" y="90" width="30" height="50" fill="#ef5350" rx="2"/>
+        <text x="135" y="148" fill="#ef5350" font-size="9" text-anchor="middle">-价</text>
+        <text x="135" y="200" fill="#7ea8c9" font-size="9" text-anchor="middle">价格</text>
+        <!-- Mix positive -->
+        <rect x="165" y="70" width="30" height="20" fill="#4caf50" rx="2"/>
+        <text x="180" y="65" fill="#4caf50" font-size="9" text-anchor="middle">+结构</text>
+        <text x="180" y="200" fill="#7ea8c9" font-size="9" text-anchor="middle">结构</text>
+        <!-- Other negative -->
+        <rect x="210" y="90" width="30" height="30" fill="#ef5350" rx="2"/>
+        <text x="225" y="128" fill="#ef5350" font-size="9" text-anchor="middle">-其他</text>
+        <text x="225" y="200" fill="#7ea8c9" font-size="9" text-anchor="middle">其他</text>
+        <!-- Result -->
+        <rect x="260" y="65" width="30" height="35" fill="#ffb300" rx="2"/>
+        <text x="275" y="60" fill="#ffb300" font-size="9" text-anchor="middle">差距</text>
+        <text x="275" y="200" fill="#7ea8c9" font-size="9" text-anchor="middle">合计</text>
+        <!-- Values -->
+        <text x="45" y="97" fill="#fff" font-size="9" text-anchor="middle">3248</text>
+        <text x="90" y="84" fill="#fff" font-size="9" text-anchor="middle">+412</text>
+        <text x="135" y="112" fill="#fff" font-size="9" text-anchor="middle">-318</text>
+        <text x="180" y="83" fill="#fff" font-size="9" text-anchor="middle">+156</text>
+        <text x="225" y="107" fill="#fff" font-size="9" text-anchor="middle">-98</text>
+        <text x="275" y="76" fill="#fff" font-size="9" text-anchor="middle">-252</text>
+      </svg>
+    </div>
+
+    <!-- Contribution bar -->
+    <div class="chart-card">
+      <h4>产品维度贡献拆解</h4>
+      <svg class="chart" height="220" viewBox="0 0 300 220">
+        <line x1="100" y1="10" x2="100" y2="195" stroke="#1e3a5f"/>
+        <line x1="100" y1="195" x2="290" y2="195" stroke="#1e3a5f"/>
+        <line x1="100" y1="195" x2="20" y2="195" stroke="#1e3a5f"/>
+        <line x1="100" y1="10" x2="100" y2="195" stroke="#1e3a5f"/>
+        <!-- Zero line at x=100 -->
+        <text x="100" y="205" fill="#7ea8c9" font-size="9" text-anchor="middle">0</text>
+        <!-- Positive bars (right) -->
+        <text x="95" y="32" fill="#7ea8c9" font-size="10" text-anchor="end">车生长</text>
+        <rect x="100" y="22" width="120" height="16" fill="#4caf50" rx="2"/>
+        <text x="224" y="34" fill="#4caf50" font-size="9">+412万</text>
+
+        <text x="95" y="64" fill="#7ea8c9" font-size="10" text-anchor="end">车改装</text>
+        <rect x="100" y="54" width="80" height="16" fill="#4caf50" rx="2" opacity=".8"/>
+        <text x="184" y="66" fill="#4caf50" font-size="9">+275万</text>
+
+        <text x="95" y="96" fill="#7ea8c9" font-size="10" text-anchor="end">内销渠道</text>
+        <rect x="100" y="86" width="50" height="16" fill="#4caf50" rx="2" opacity=".6"/>
+        <text x="154" y="98" fill="#4caf50" font-size="9">+172万</text>
+
+        <!-- Negative bars (left) -->
+        <text x="95" y="128" fill="#7ea8c9" font-size="10" text-anchor="end">车生活</text>
+        <rect x="40" y="118" width="60" height="16" fill="#ef5350" rx="2"/>
+        <text x="36" y="130" fill="#ef5350" font-size="9" text-anchor="end">-208万</text>
+
+        <text x="95" y="160" fill="#7ea8c9" font-size="10" text-anchor="end">T4N外装</text>
+        <rect x="55" y="150" width="45" height="16" fill="#ef5350" rx="2" opacity=".8"/>
+        <text x="51" y="162" fill="#ef5350" font-size="9" text-anchor="end">-155万</text>
+
+        <text x="95" y="192" fill="#7ea8c9" font-size="10" text-anchor="end">价格侵蚀</text>
+        <rect x="70" y="182" width="30" height="16" fill="#ef5350" rx="2" opacity=".6"/>
+        <text x="66" y="194" fill="#ef5350" font-size="9" text-anchor="end">-104万</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Heatmap -->
+  <div class="section-title">区域 × 产品 交叉热力图</div>
+  <div class="chart-card">
+    <table class="heatmap-table">
+      <thead>
+        <tr>
+          <th>区域\产品</th>
+          <th>T1N基础</th><th>T2N智能</th><th>T3N娱乐</th>
+          <th>T4N外装</th><th>T5N内饰</th><th>T6N生活</th>
+        </tr>
+      </thead>
+      <tbody id="heatmap-body">
+        <!-- Generated by JS -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== PAGE 4: 异常告警 ========== -->
+<div class="page" id="page-4">
+  <div class="two-col">
+    <div>
+      <div class="section-title">🔴 严重告警 (2)</div>
+      <div class="alert-list" style="margin-bottom:16px">
+        <div class="alert-item">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-body">
+            <div class="alert-title">车生活产品线渗透率连续3个月下滑</div>
+            <div class="alert-desc">4月 54.2% → 3月 58.1% → 2月 62.4% → 1月 66.8%，连续下降 12.6pp。主因：T6N 生活周边 SKU 老化，缺乏爆品驱动。<br><strong>建议：</strong>上线新品 + 加强终端陈列推荐位置</div>
+          </div>
+          <div class="alert-time">严重</div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-body">
+            <div class="alert-title">东北大区销售额环比下降 11%</div>
+            <div class="alert-desc">3月 302万 → 4月 270万，低于目标线 18%。结合库存数据，存在压货风险，建议拜访核心经销商并评估库存消化情况。</div>
+          </div>
+          <div class="alert-time">严重</div>
+        </div>
+      </div>
+
+      <div class="section-title">🟡 警告 (3)</div>
+      <div class="alert-list" style="margin-bottom:16px">
+        <div class="alert-item warn">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-body">
+            <div class="alert-title">APP商城客单价环比下降 12%</div>
+            <div class="alert-desc">4月 186元，3月 211元，流量上升但客单下降，可能存在低价引流品稀释效果。</div>
+          </div>
+          <div class="alert-time">警告</div>
+        </div>
+        <div class="alert-item warn">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-body">
+            <div class="alert-title">T5N 内饰升级毛利率跌破 22%</div>
+            <div class="alert-desc">当前毛利率 21.3%，低于设定预警线 22%，可能与原材料成本上涨相关。</div>
+          </div>
+          <div class="alert-time">警告</div>
+        </div>
+        <div class="alert-item warn">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-body">
+            <div class="alert-title">武汉改行经销商完成率连续2月低于 85%</div>
+            <div class="alert-desc">3月 82%，4月 80%，有完成率进一步下滑风险，建议区域销售经理跟进。</div>
+          </div>
+          <div class="alert-time">警告</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">🔵 提示 (4)</div>
+      <div class="alert-list" style="margin-bottom:16px">
+        <div class="alert-item info">
+          <div class="alert-icon">ℹ️</div>
+          <div class="alert-body">
+            <div class="alert-title">华南大区超目标 18%，可提炼成功经验</div>
+            <div class="alert-desc">重点：终端陈列 + 线上线下联动活动，建议整理 playbook 推广至其他区域。</div>
+          </div>
+          <div class="alert-time">提示</div>
+        </div>
+        <div class="alert-item info">
+          <div class="alert-icon">ℹ️</div>
+          <div class="alert-body">
+            <div class="alert-title">T1N 基础养护产品线超额完成 105%</div>
+            <div class="alert-desc">连续3月稳定超额，是稳健现金流产品，建议保持策略稳定，适时扩 SKU。</div>
+          </div>
+          <div class="alert-time">提示</div>
+        </div>
+        <div class="alert-item info">
+          <div class="alert-icon">ℹ️</div>
+          <div class="alert-body">
+            <div class="alert-title">APP 商城 4月流量环比增长 8.2%</div>
+            <div class="alert-desc">搜索流量增长显著，SEO 优化效果开始显现，建议持续投入内容营销。</div>
+          </div>
+          <div class="alert-time">提示</div>
+        </div>
+        <div class="alert-item info">
+          <div class="alert-icon">ℹ️</div>
+          <div class="alert-body">
+            <div class="alert-title">T3完成率超目标 2.4pp，达 97.4%</div>
+            <div class="alert-desc">供应链履约良好，月中预测全月有望维持在 95% 以上，建议保持现有节奏。</div>
+          </div>
+          <div class="alert-time">提示</div>
+        </div>
+      </div>
+
+      <!-- Structural changes -->
+      <div class="section-title">结构变化追踪 (近6月)</div>
+      <div class="chart-card">
+        <h4>产品结构月度变化</h4>
+        <svg class="chart" height="120" viewBox="0 0 300 120">
+          <!-- Stacked bar chart for 6 months -->
+          <!-- Nov: 车生长47, 车改装34, 车生活19 -->
+          <rect x="15" y="10" width="28" height="56" fill="#4fc3f7"/>
+          <rect x="15" y="66" width="28" height="41" fill="#4caf50"/>
+          <rect x="15" y="107" width="28" height="23" fill="#ffb300"/>
+          <!-- Dec -->
+          <rect x="55" y="14" width="28" height="52" fill="#4fc3f7"/>
+          <rect x="55" y="66" width="28" height="39" fill="#4caf50"/>
+          <rect x="55" y="105" width="28" height="25" fill="#ffb300"/>
+          <!-- Jan -->
+          <rect x="95" y="16" width="28" height="49" fill="#4fc3f7"/>
+          <rect x="95" y="65" width="28" height="38" fill="#4caf50"/>
+          <rect x="95" y="103" width="28" height="27" fill="#ffb300"/>
+          <!-- Feb -->
+          <rect x="135" y="18" width="28" height="47" fill="#4fc3f7"/>
+          <rect x="135" y="65" width="28" height="37" fill="#4caf50"/>
+          <rect x="135" y="102" width="28" height="28" fill="#ffb300"/>
+          <!-- Mar -->
+          <rect x="175" y="20" width="28" height="45" fill="#4fc3f7"/>
+          <rect x="175" y="65" width="28" height="36" fill="#4caf50"/>
+          <rect x="175" y="101" width="28" height="29" fill="#ffb300"/>
+          <!-- Apr -->
+          <rect x="215" y="22" width="28" height="45" fill="#4fc3f7"/>
+          <rect x="215" y="67" width="28" height="32" fill="#4caf50"/>
+          <rect x="215" y="99" width="28" height="31" fill="#ffb300"/>
+          <!-- Labels -->
+          <text x="29" y="118" fill="#7ea8c9" font-size="8" text-anchor="middle">11月</text>
+          <text x="69" y="118" fill="#7ea8c9" font-size="8" text-anchor="middle">12月</text>
+          <text x="109" y="118" fill="#7ea8c9" font-size="8" text-anchor="middle">1月</text>
+          <text x="149" y="118" fill="#7ea8c9" font-size="8" text-anchor="middle">2月</text>
+          <text x="189" y="118" fill="#7ea8c9" font-size="8" text-anchor="middle">3月</text>
+          <text x="229" y="118" fill="#7ea8c9" font-size="8" text-anchor="middle">4月</text>
+          <!-- Legend -->
+          <rect x="260" y="15" width="8" height="8" fill="#4fc3f7"/>
+          <text x="271" y="23" fill="#7ea8c9" font-size="8">车生长</text>
+          <rect x="260" y="30" width="8" height="8" fill="#4caf50"/>
+          <text x="271" y="38" fill="#7ea8c9" font-size="8">车改装</text>
+          <rect x="260" y="45" width="8" height="8" fill="#ffb300"/>
+          <text x="271" y="53" fill="#7ea8c9" font-size="8">车生活</text>
+        </svg>
+        <div style="font-size:11px;color:#ef5350;margin-top:6px">⚠️ 车生活占比持续收缩，从11月19%降至4月23%暂停改善 → 已触发告警</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Tab switching =====
+var pages = document.querySelectorAll('.page');
+var tabs = document.querySelectorAll('.tab');
+
+function switchPage(idx) {
+  pages.forEach(function(p, i) {
+    p.classList.toggle('active', i === idx);
+  });
+  tabs.forEach(function(t, i) {
+    t.classList.toggle('active', i === idx);
+  });
+}
+
+// ===== Sub-tab switching =====
+function switchSubTab(el, group) {
+  var parent = el.parentElement;
+  parent.querySelectorAll('.sub-tab').forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+// ===== Heatmap generation =====
+var regions = ['华南', '华东', '华北', '西南', '华中', '东北'];
+var products = ['T1N', 'T2N', 'T3N', 'T4N', 'T5N', 'T6N'];
+// Values: completion rate relative to target (higher is better)
+var heatData = [
+  [112,105,98,92,88,78],
+  [108,102,96,88,84,75],
+  [104,98,92,85,80,72],
+  [98,94,88,80,76,68],
+  [95,90,85,76,72,65],
+  [88,82,78,68,64,58]
+];
+
+function getHeatColor(v) {
+  if (v >= 100) return 'rgba(76,175,80,' + Math.min(0.9, (v-100)/20 + 0.4) + ')';
+  if (v >= 90) return 'rgba(255,179,0,' + ((v-90)/10 * 0.4 + 0.25) + ')';
+  return 'rgba(239,83,80,' + ((90-v)/30 * 0.6 + 0.3) + ')';
+}
+
+var tbody = document.getElementById('heatmap-body');
+regions.forEach(function(r, ri) {
+  var tr = document.createElement('tr');
+  var td0 = document.createElement('td');
+  td0.textContent = r;
+  td0.style.color = '#7ea8c9';
+  td0.style.fontWeight = '600';
+  tr.appendChild(td0);
+  products.forEach(function(p, pi) {
+    var v = heatData[ri][pi];
+    var td = document.createElement('td');
+    td.textContent = v + '%';
+    td.style.background = getHeatColor(v);
+    td.style.color = '#fff';
+    tr.appendChild(td);
+  });
+  tbody.appendChild(tr);
+});
+
+// ===== Filter update (stub) =====
+function updateCharts() {
+  // In a real implementation this would re-render charts with filtered data
+  console.log('Filter changed:', 
+    document.getElementById('monthFilter').value,
+    document.getElementById('channelFilter').value,
+    document.getElementById('productFilter').value
+  );
+}
+</script>
+</body>
+</html>

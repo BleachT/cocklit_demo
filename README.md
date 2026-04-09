@@ -42,12 +42,24 @@ streamlit run app.py
 - **离线计算**（生产）：Apache Spark + Hive/Iceberg
 - **OLAP**（生产）：ClickHouse
 
+## 原型演示
+
+双击打开即可本地演示驾驶舱交互原型：
+
+```
+prototype/demo002.html
+```
+
+包含：全局预览、渠道详情、产品分析、归因分析、异常告警 五大页面，无需安装任何依赖。
+
 ## 目录结构
 
 ```
 cocklit_demo/
 ├── app.py              # 主驾驶舱应用
 ├── requirements.txt    # Python 依赖
+├── prototype/
+│   └── demo002.html    # 交互式 HTML 原型（可直接本地打开演示）
 ├── data/
 │   └── mock_data.py    # 模拟数据生成（生产替换为 ClickHouse SQL）
 └── docs/
