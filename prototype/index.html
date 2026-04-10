@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>驾驶舱 Demo — 入口导航</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+    .logo {
+      font-size: 36px;
+      font-weight: 800;
+      color: #58a6ff;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: #8b949e;
+      margin-bottom: 48px;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 48px;
+    }
+    .demo-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 28px 28px 24px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .demo-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: #58a6ff;
+    }
+    .demo-card:hover {
+      border-color: #58a6ff;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(88,166,255,0.15);
+    }
+    .demo-card-icon { font-size: 32px; }
+    .demo-card-title { font-size: 18px; font-weight: 700; }
+    .demo-card-desc { font-size: 13px; color: #8b949e; line-height: 1.6; }
+    .demo-card-badge {
+      display: inline-block;
+      background: rgba(88,166,255,0.15);
+      color: #58a6ff;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      align-self: flex-start;
+    }
+    .demo-card-badge.new { background: rgba(63,185,80,0.15); color: #3fb950; }
+    .footer {
+      font-size: 12px;
+      color: #484f58;
+    }
+    .footer a { color: #58a6ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="logo">🚗 驾驶舱 Demo</div>
+  <div class="subtitle">销售数据分析平台 — 原型入口导航</div>
+
+  <div class="card-grid">
+    <a class="demo-card" href="demo002.html">
+      <div class="demo-card-icon">📊</div>
+      <div class="demo-card-badge new">最新版</div>
+      <div class="demo-card-title">demo002 — 完整驾驶舱</div>
+      <div class="demo-card-desc">
+        包含 5 大核心页面：全局预览 · 渠道详情 · 产品分析 · 归因分析 · 异常告警。
+        完整交互流程，可直接演示。
+      </div>
+    </a>
+  </div>
+
+  <div class="footer">
+    本地双击 <code>prototype/demo002.html</code> 即可离线演示 &nbsp;|&nbsp;
+    <a href="https://github.com/BleachT/cocklit_demo">GitHub 仓库</a>
+  </div>
+</body>
+</html>
