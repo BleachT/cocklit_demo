@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>驾驶舱 Demo – demo002</title>
+<style>
+:root{--bg:#0b1120;--panel:#111b2e;--border:#1e3050;--accent:#1e90ff;--accent2:#00d4aa;--red:#ff4d4f;--yellow:#ffc53d;--green:#52c41a;--text:#e0eaff;--muted:#7a92b8;--card:#152238;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Microsoft YaHei',sans-serif;font-size:13px;min-height:100vh;}
+.top-nav{display:flex;align-items:center;background:var(--panel);border-bottom:1px solid var(--border);height:48px;padding:0 24px;gap:4px;position:sticky;top:0;z-index:100;}
+.logo{font-size:16px;font-weight:700;color:var(--accent);margin-right:20px;white-space:nowrap;}
+.nav-tab{padding:6px 18px;border-radius:6px 6px 0 0;cursor:pointer;border:1px solid transparent;border-bottom:none;color:var(--muted);font-size:13px;transition:all .2s;white-space:nowrap;user-select:none;}
+.nav-tab:hover{color:var(--text);background:rgba(30,144,255,.08);}
+.nav-tab.active{color:var(--accent);border-color:var(--border);background:var(--bg);border-bottom-color:var(--bg);}
+.filter-bar{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.filter-bar select{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;}
+.page{display:none;padding:16px 20px;}
+.page.active{display:block;}
+.sec{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding-left:8px;border-left:3px solid var(--accent);}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.kpi.warn::before{background:linear-gradient(90deg,var(--yellow),var(--red));}
+.kpi.good::before{background:linear-gradient(90deg,var(--green),var(--accent2));}
+.kpi-lbl{font-size:11px;color:var(--muted);margin-bottom:6px;}
+.kpi-val{font-size:22px;font-weight:700;line-height:1;}
+.kpi-sub{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;}
+.up{color:var(--green);font-weight:600;}
+.dn{color:var(--red);font-weight:600;}
+.prog{background:var(--border);border-radius:2px;height:4px;margin-top:8px;overflow:hidden;}
+.prog-bar{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s;}
+.row2{display:grid;gap:12px;margin-bottom:16px;}
+.c2{grid-template-columns:1fr 1fr;}
+.c3{grid-template-columns:2fr 1fr 1fr;}
+.c32{grid-template-columns:3fr 2fr;}
+.cbox{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.cbox-hd{font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.cbox-hd span:first-child{color:var(--text);font-weight:600;}
+.al{display:flex;flex-direction:column;gap:8px;}
+.ai{display:flex;align-items:flex-start;gap:10px;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:10px 12px;cursor:pointer;transition:border-color .2s;}
+.ai:hover{border-color:var(--accent);}
+.adot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.adot.r{background:var(--red);box-shadow:0 0 6px var(--red);}
+.adot.y{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+.adot.g{background:var(--green);}
+.ac{flex:1;}
+.at{font-size:12px;color:var(--text);margin-bottom:2px;}
+.ad{font-size:11px;color:var(--muted);}
+.atag{font-size:10px;padding:2px 6px;border-radius:3px;margin-left:auto;flex-shrink:0;}
+.cr{background:rgba(255,77,79,.2);color:var(--red);}
+.wr{background:rgba(255,197,61,.2);color:var(--yellow);}
+.ok{background:rgba(82,196,26,.2);color:var(--green);}
+.sub-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border);}
+.sub-tab{padding:6px 16px;cursor:pointer;font-size:12px;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-1px;user-select:none;}
+.sub-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.sub-tab:hover:not(.active){color:var(--text);}
+table.dt{width:100%;border-collapse:collapse;font-size:12px;}
+.dt th{background:var(--panel);color:var(--muted);padding:8px 10px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);}
+.dt td{padding:8px 10px;border-bottom:1px solid rgba(30,48,80,.5);}
+.dt tr:hover td{background:rgba(30,144,255,.04);}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;}
+.bu{background:rgba(82,196,26,.15);color:var(--green);}
+.bd{background:rgba(255,77,79,.15);color:var(--red);}
+.bf{background:rgba(122,146,184,.15);color:var(--muted);}
+.tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;}
+.tb{background:rgba(30,144,255,.2);color:var(--accent);}
+.tg{background:rgba(82,196,26,.2);color:var(--green);}
+.tr{background:rgba(255,77,79,.2);color:var(--red);}
+.ty{background:rgba(255,197,61,.2);color:var(--yellow);}
+.donut-wrap{display:flex;align-items:center;gap:16px;}
+.legend{display:flex;flex-direction:column;gap:6px;font-size:11px;}
+.li{display:flex;align-items:center;gap:6px;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.stat-row{display:flex;gap:16px;margin-bottom:8px;}
+.si{flex:1;}
+.sl{font-size:11px;color:var(--muted);margin-bottom:2px;}
+.sv{font-size:16px;font-weight:700;}
+hr.dv{border:none;border-top:1px solid var(--border);margin:12px 0;}
+.spark-row{display:flex;align-items:flex-end;gap:2px;height:28px;}
+.sp{flex:1;border-radius:2px 2px 0 0;min-height:3px;}
+.scroll{overflow-y:auto;max-height:300px;}
+.scroll::-webkit-scrollbar{width:4px;}
+.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.funnel-step{padding:8px 12px;border-radius:4px;font-size:12px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="logo">🚗 驾驶舱 · CockLit</div>
+  <div class="nav-tab active" onclick="switchPage('p1',this)">全局预览</div>
+  <div class="nav-tab" onclick="switchPage('p2',this)">渠道详情</div>
+  <div class="nav-tab" onclick="switchPage('p3',this)">产品分析</div>
+  <div class="nav-tab" onclick="switchPage('p4',this)">归因分析</div>
+  <div class="nav-tab" onclick="switchPage('p5',this)">异常告警</div>
+  <div class="filter-bar">
+    <select id="mf"><option>2024-04</option><option>2024-03</option><option>2024-02</option><option selected>2024-01</option><option>2023-12</option><option>2023-11</option></select>
+    <select id="cf"><option>全部渠道</option><option>终端</option><option>APP商城</option><option>其他</option><option>内销</option></select>
+  </div>
+</nav>
+
+<!-- PAGE 1: 全局预览 -->
+<div id="p1" class="page active">
+  <div class="sec" style="margin-bottom:12px">KPI 总览</div>
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-lbl">销售额（万元）</div>
+      <div class="kpi-val">4,821</div>
+      <div class="kpi-sub"><span style="color:var(--muted)">目标 5,200</span><span class="up">▲ 3.2%</span></div>
+      <div class="prog"><div class="prog-bar" style="width:92.7%"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">完成率 92.7%</div>
+    </div>
+    <div class="kpi good">
+      <div class="kpi-lbl">毛利（万元）</div>
+      <div class="kpi-val">1,356</div>
+      <div class="kpi-sub"><span style="color:var(--muted)">目标 1,300</span><span class="up">▲ 7.8%</span></div>
+      <div class="prog"><div class="prog-bar" style="width:100%;background:linear-gradient(90deg,var(--green),var(--accent2))"></div></div>
+      <div style="font-size:10px;color:var(--green);margin-top:4px">完成率 104.3% ✓</div>
+    </div>
+    <div class="kpi warn">
+      <div class="kpi-lbl">净利润（万元）</div>
+      <div class="kpi-val">382</div>
+      <div class="kpi-sub"><span style="color:var(--muted)">目标 500</span><span class="dn">▼ 12.4%</span></div>
+      <div class="prog"><div class="prog-bar" style="width:76.4%;background:linear-gradient(90deg,var(--yellow),var(--red))"></div></div>
+      <div style="font-size:10px;color:var(--red);margin-top:4px">完成率 76.4% ⚠</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">T3 完成率</div>
+      <div class="kpi-val">88.5%</div>
+      <div class="kpi-sub"><span style="color:var(--muted)">目标 95%</span><span class="dn">▼ 2.1%</span></div>
+      <div class="prog"><div class="prog-bar" style="width:88.5%"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">差距 6.5 ppt</div>
+    </div>
+    <div class="kpi good">
+      <div class="kpi-lbl">提车量（台）</div>
+      <div class="kpi-val">2,147</div>
+      <div class="kpi-sub"><span style="color:var(--muted)">目标 2,000</span><span class="up">▲ 8.6%</span></div>
+      <div class="prog"><div class="prog-bar" style="width:100%;background:linear-gradient(90deg,var(--green),var(--accent2))"></div></div>
+      <div style="font-size:10px;color:var(--green);margin-top:4px">完成率 107.4% ✓</div>
+    </div>
+    <div class="kpi warn">
+      <div class="kpi-lbl">渗透率</div>
+      <div class="kpi-val">34.2%</div>
+      <div class="kpi-sub"><span style="color:var(--muted)">目标 40%</span><span class="dn">▼ 3.4%</span></div>
+      <div class="prog"><div class="prog-bar" style="width:85.5%;background:linear-gradient(90deg,var(--yellow),var(--red))"></div></div>
+      <div style="font-size:10px;color:var(--yellow);margin-top:4px">完成率 85.5%</div>
+    </div>
+  </div>
+
+  <div class="row2 c2">
+    <div class="cbox">
+      <div class="cbox-hd"><span>月度进度预测</span><span style="font-size:11px">当前第 9 天</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">销售额</div>
+      <div style="position:relative;height:18px;background:var(--border);border-radius:5px;overflow:hidden">
+        <div style="position:absolute;left:0;top:0;height:100%;width:42%;background:var(--accent);display:flex;align-items:center;padding-left:6px;font-size:10px;font-weight:600">42%</div>
+        <div style="position:absolute;left:42%;top:0;height:100%;width:50%;background:rgba(0,212,170,.3)"></div>
+        <div style="position:absolute;left:92%;top:0;bottom:0;width:2px;background:var(--yellow)"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:5px;font-size:11px">
+        <span style="color:var(--accent)">■ 已完成: 4,821万</span>
+        <span style="color:var(--accent2)">■ 预测: 11,478万</span>
+        <span style="color:var(--yellow)">｜ 目标: 5,200万</span>
+      </div>
+      <hr class="dv">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">提车量</div>
+      <div style="position:relative;height:18px;background:var(--border);border-radius:5px;overflow:hidden">
+        <div style="position:absolute;left:0;top:0;height:100%;width:57%;background:var(--green);display:flex;align-items:center;padding-left:6px;font-size:10px;font-weight:600">57%</div>
+        <div style="position:absolute;left:57%;top:0;height:100%;width:41%;background:rgba(82,196,26,.25)"></div>
+        <div style="position:absolute;left:97%;top:0;bottom:0;width:2px;background:var(--yellow)"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:5px;font-size:11px">
+        <span style="color:var(--green)">■ 已完成: 2,147台</span>
+        <span style="color:rgba(82,196,26,.7)">■ 预测: 4,834台</span>
+        <span style="color:var(--yellow)">｜ 目标: 4,200台</span>
+      </div>
+    </div>
+    <div class="cbox">
+      <div class="cbox-hd"><span>渠道贡献占比</span></div>
+      <div class="donut-wrap">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="46" fill="none" stroke="var(--border)" stroke-width="18"/>
+          <circle cx="60" cy="60" r="46" fill="none" stroke="#1e90ff" stroke-width="18" stroke-dasharray="122 167" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+          <circle cx="60" cy="60" r="46" fill="none" stroke="#00d4aa" stroke-width="18" stroke-dasharray="81 208" stroke-dashoffset="-122" transform="rotate(-90 60 60)"/>
+          <circle cx="60" cy="60" r="46" fill="none" stroke="#ffc53d" stroke-width="18" stroke-dasharray="52 237" stroke-dashoffset="-203" transform="rotate(-90 60 60)"/>
+          <circle cx="60" cy="60" r="46" fill="none" stroke="#ff7a45" stroke-width="18" stroke-dasharray="35 254" stroke-dashoffset="-255" transform="rotate(-90 60 60)"/>
+          <text x="60" y="56" text-anchor="middle" font-size="10" fill="var(--muted)">渠道</text>
+          <text x="60" y="69" text-anchor="middle" font-size="10" fill="var(--muted)">占比</text>
+        </svg>
+        <div class="legend">
+          <div class="li"><div class="dot" style="background:#1e90ff"></div><span>终端 <b>42%</b></span></div>
+          <div class="li"><div class="dot" style="background:#00d4aa"></div><span>APP商城 <b>28%</b></span></div>
+          <div class="li"><div class="dot" style="background:#ffc53d"></div><span>其他 <b>18%</b></span></div>
+          <div class="li"><div class="dot" style="background:#ff7a45"></div><span>内销 <b>12%</b></span></div>
+        </div>
+      </div>
+      <hr class="dv">
+      <div class="stat-row">
+        <div class="si"><div class="sl">终端环比</div><div class="sv" style="color:var(--green);font-size:14px">+5.3%</div></div>
+        <div class="si"><div class="sl">APP环比</div><div class="sv" style="color:var(--red);font-size:14px">-2.1%</div></div>
+        <div class="si"><div class="sl">其他环比</div><div class="sv" style="color:var(--yellow);font-size:14px">+0.8%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cbox" style="margin-bottom:16px">
+    <div class="cbox-hd"><span>月度销售额趋势（近12个月）</span><span style="font-size:11px"><span class="tag tb">销售额</span> <span class="tag tg">毛利</span> <span class="tag ty">目标线</span></span></div>
+    <svg width="100%" height="150" viewBox="0 0 900 150" preserveAspectRatio="none">
+      <line x1="0" y1="20" x2="900" y2="20" stroke="var(--border)" stroke-width="0.5"/>
+      <line x1="0" y1="60" x2="900" y2="60" stroke="var(--border)" stroke-width="0.5"/>
+      <line x1="0" y1="100" x2="900" y2="100" stroke="var(--border)" stroke-width="0.5"/>
+      <line x1="0" y1="140" x2="900" y2="140" stroke="var(--border)" stroke-width="0.5"/>
+      <rect x="10"  y="50"  width="55" height="90"  fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="85"  y="40"  width="55" height="100" fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="160" y="30"  width="55" height="110" fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="235" y="55"  width="55" height="85"  fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="310" y="35"  width="55" height="105" fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="385" y="25"  width="55" height="115" fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="460" y="45"  width="55" height="95"  fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="535" y="20"  width="55" height="120" fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="610" y="30"  width="55" height="110" fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="685" y="25"  width="55" height="115" fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="760" y="35"  width="55" height="105" fill="rgba(30,144,255,.7)" rx="3"/>
+      <rect x="835" y="28"  width="55" height="112" fill="rgba(30,144,255,.9)" rx="3"/>
+      <polyline points="37,108 112,103 187,98 262,110 337,96 412,88 487,106 562,83 637,93 712,86 787,90 862,84" fill="none" stroke="var(--green)" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="0" y1="45" x2="900" y2="45" stroke="var(--yellow)" stroke-width="1.5" stroke-dasharray="6,4"/>
+      <text x="37"  y="148" text-anchor="middle" font-size="9" fill="var(--muted)">1月</text>
+      <text x="112" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">2月</text>
+      <text x="187" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">3月</text>
+      <text x="262" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">4月</text>
+      <text x="337" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">5月</text>
+      <text x="412" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">6月</text>
+      <text x="487" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">7月</text>
+      <text x="562" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">8月</text>
+      <text x="637" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">9月</text>
+      <text x="712" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">10月</text>
+      <text x="787" y="148" text-anchor="middle" font-size="9" fill="var(--muted)">11月</text>
+      <text x="862" y="148" text-anchor="middle" font-size="9" fill="var(--accent)">12月</text>
+    </svg>
+  </div>
+
+  <div class="sec">告警摘要（Top 3）</div>
+  <div class="al" style="margin-top:8px">
+    <div class="ai" onclick="switchPage('p5',document.querySelectorAll('.nav-tab')[4])">
+      <div class="adot r"></div>
+      <div class="ac"><div class="at">净利润连续3个月低于目标</div><div class="ad">当前完成率 76.4%，差距持续扩大，需关注成本端压力</div></div>
+      <div class="atag cr">严重</div>
+    </div>
+    <div class="ai" onclick="switchPage('p5',document.querySelectorAll('.nav-tab')[4])">
+      <div class="adot y"></div>
+      <div class="ac"><div class="at">渗透率较目标差距 5.8 ppt</div><div class="ad">APP商城渗透率环比下降 3.4%，需排查流量入口转化问题</div></div>
+      <div class="atag wr">预警</div>
+    </div>
+    <div class="ai">
+      <div class="adot g"></div>
+      <div class="ac"><div class="at">提车量超额完成目标 7.4%</div><div class="ad">终端渠道贡献主要增量，大区 TOP3 均超额完成</div></div>
+      <div class="atag ok">正常</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: 渠道详情 -->
+<div id="p2" class="page">
+  <div class="sub-tabs">
+    <div class="sub-tab active" onclick="switchSub('ch','ch-t',this)">终端</div>
+    <div class="sub-tab" onclick="switchSub('ch','ch-a',this)">APP商城</div>
+    <div class="sub-tab" onclick="switchSub('ch','ch-o',this)">其他</div>
+    <div class="sub-tab" onclick="switchSub('ch','ch-i',this)">内销</div>
+  </div>
+
+  <div id="ch-t" class="ch">
+    <div class="row2 c3">
+      <div class="cbox" style="grid-column:span 2">
+        <div class="cbox-hd"><span>大区销售额排行榜</span></div>
+        <table class="dt">
+          <thead><tr><th>#</th><th>大区</th><th>销售额(万)</th><th>目标</th><th>完成率</th><th>环比</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>华东</td><td>1,432</td><td>1,400</td><td><span style="color:var(--green)">102.3%</span></td><td><span class="badge bu">▲4.2%</span></td></tr>
+            <tr><td>2</td><td>华南</td><td>1,108</td><td>1,200</td><td><span style="color:var(--yellow)">92.3%</span></td><td><span class="badge bd">▼1.8%</span></td></tr>
+            <tr><td>3</td><td>华北</td><td>876</td><td>800</td><td><span style="color:var(--green)">109.5%</span></td><td><span class="badge bu">▲7.6%</span></td></tr>
+            <tr><td>4</td><td>西南</td><td>524</td><td>600</td><td><span style="color:var(--red)">87.3%</span></td><td><span class="badge bd">▼5.2%</span></td></tr>
+            <tr><td>5</td><td>东北</td><td>388</td><td>350</td><td><span style="color:var(--green)">110.9%</span></td><td><span class="badge bu">▲3.1%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cbox">
+        <div class="cbox-hd"><span>终端 KPI</span></div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div><div class="sl">总销售额</div><div class="sv" style="font-size:20px">4,328万</div></div>
+          <div><div class="sl">经销商数量</div><div class="sv" style="font-size:20px">312 家</div></div>
+          <div><div class="sl">人均产出</div><div class="sv" style="font-size:20px;color:var(--accent)">13.9万/人</div></div>
+          <div>
+            <div class="sl">Top10 经销商贡献率</div>
+            <div class="sv" style="font-size:20px;color:var(--green)">38.4%</div>
+            <div class="prog" style="margin-top:4px"><div class="prog-bar" style="width:38.4%;background:linear-gradient(90deg,var(--green),var(--accent2))"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cbox">
+      <div class="cbox-hd"><span>Top 10 经销商明细</span></div>
+      <div class="scroll">
+        <table class="dt">
+          <thead><tr><th>经销商</th><th>大区</th><th>销售额(万)</th><th>提车量</th><th>渗透率</th><th>完成率</th><th>标签</th></tr></thead>
+          <tbody id="dealer-tb"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="ch-a" class="ch" style="display:none">
+    <div class="row2 c3">
+      <div class="cbox">
+        <div class="cbox-hd"><span>流量漏斗</span></div>
+        <div style="margin-top:8px">
+          <div class="funnel-step" style="background:rgba(30,144,255,.35)">访客UV<b>284,700</b></div>
+          <div class="funnel-step" style="background:rgba(30,144,255,.28);width:85%">商品浏览<b>142,350</b><span style="font-size:10px;color:var(--muted)">50%</span></div>
+          <div class="funnel-step" style="background:rgba(30,144,255,.21);width:65%">加购<b>49,822</b><span style="font-size:10px;color:var(--muted)">35%</span></div>
+          <div class="funnel-step" style="background:rgba(30,144,255,.14);width:40%">下单<b>22,416</b><span style="font-size:10px;color:var(--muted)">45%</span></div>
+          <div class="funnel-step" style="background:rgba(30,144,255,.08);width:20%">支付<b>13,450</b><span style="font-size:10px;color:var(--muted)">60%</span></div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted)">整体转化率 <b style="color:var(--accent2)">4.73%</b>，环比 <span class="dn">▼0.8%</span></div>
+      </div>
+      <div class="cbox">
+        <div class="cbox-hd"><span>流量来源</span></div>
+        <div class="donut-wrap" style="margin-top:8px">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="36" fill="none" stroke="var(--border)" stroke-width="16"/>
+            <circle cx="50" cy="50" r="36" fill="none" stroke="#1e90ff" stroke-width="16" stroke-dasharray="91 135" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="36" fill="none" stroke="#00d4aa" stroke-width="16" stroke-dasharray="57 169" stroke-dashoffset="-91" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="36" fill="none" stroke="#ffc53d" stroke-width="16" stroke-dasharray="41 185" stroke-dashoffset="-148" transform="rotate(-90 50 50)"/>
+          </svg>
+          <div class="legend">
+            <div class="li"><div class="dot" style="background:#1e90ff"></div><span>搜索 40%</span></div>
+            <div class="li"><div class="dot" style="background:#00d4aa"></div><span>推荐 25%</span></div>
+            <div class="li"><div class="dot" style="background:#ffc53d"></div><span>广告 18%</span></div>
+            <div class="li"><div class="dot" style="background:var(--border)"></div><span>其他 17%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cbox">
+        <div class="cbox-hd"><span>APP KPI</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+          <div><div class="sl">销售额</div><div class="sv">1,350万</div></div>
+          <div><div class="sl">客单价</div><div class="sv">¥1,006</div></div>
+          <div><div class="sl">复购率</div><div class="sv" style="color:var(--green)">28.4%</div></div>
+          <div><div class="sl">NPS评分</div><div class="sv" style="color:var(--accent)">72</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cbox">
+      <div class="cbox-hd"><span>品类销售排行（APP商城）</span></div>
+      <table class="dt">
+        <thead><tr><th>品类</th><th>销售额(万)</th><th>件数</th><th>客单价</th><th>转化率</th><th>环比</th></tr></thead>
+        <tbody>
+          <tr><td>车生活用品</td><td>428</td><td>12,680</td><td>¥337</td><td>6.2%</td><td><span class="badge bu">▲8.3%</span></td></tr>
+          <tr><td>行车记录仪</td><td>312</td><td>4,200</td><td>¥743</td><td>4.8%</td><td><span class="badge bu">▲3.1%</span></td></tr>
+          <tr><td>车载电子</td><td>287</td><td>3,580</td><td>¥802</td><td>3.9%</td><td><span class="badge bf">→0.2%</span></td></tr>
+          <tr><td>外观改装</td><td>198</td><td>2,100</td><td>¥943</td><td>3.1%</td><td><span class="badge bd">▼2.4%</span></td></tr>
+          <tr><td>香氛空净</td><td>125</td><td>8,930</td><td>¥140</td><td>8.7%</td><td><span class="badge bu">▲14.2%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="ch-o" class="ch" style="display:none">
+    <div class="row2 c2">
+      <div class="cbox">
+        <div class="cbox-hd"><span>其他渠道概览</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:72px;font-size:12px;color:var(--muted)">线下活动</div>
+            <div style="flex:1;background:var(--border);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:62%;background:var(--accent)"></div></div>
+            <div style="width:55px;text-align:right;font-size:12px">468万</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:72px;font-size:12px;color:var(--muted)">合作推广</div>
+            <div style="flex:1;background:var(--border);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:34%;background:var(--accent2)"></div></div>
+            <div style="width:55px;text-align:right;font-size:12px">256万</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:72px;font-size:12px;color:var(--muted)">社媒引流</div>
+            <div style="flex:1;background:var(--border);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:24%;background:var(--yellow)"></div></div>
+            <div style="width:55px;text-align:right;font-size:12px">182万</div>
+          </div>
+        </div>
+        <hr class="dv">
+        <div class="stat-row">
+          <div class="si"><div class="sl">总计</div><div class="sv">906万</div></div>
+          <div class="si"><div class="sl">占比</div><div class="sv" style="color:var(--yellow)">18.8%</div></div>
+          <div class="si"><div class="sl">环比</div><div class="sv" style="color:var(--accent)">+0.8%</div></div>
+        </div>
+      </div>
+      <div class="cbox">
+        <div class="cbox-hd"><span>其他渠道异常</span></div>
+        <div class="al">
+          <div class="ai"><div class="adot y"></div><div class="ac"><div class="at">社媒引流转化率连续下降</div><div class="ad">近3个月 3.2%→2.8%→2.4%</div></div><div class="atag wr">预警</div></div>
+          <div class="ai"><div class="adot g"></div><div class="ac"><div class="at">线下活动超额完成</div><div class="ad">完成率 104%，环比 +12%</div></div><div class="atag ok">正常</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ch-i" class="ch" style="display:none">
+    <div class="row2 c2">
+      <div class="cbox">
+        <div class="cbox-hd"><span>内销渠道概览</span></div>
+        <div class="stat-row">
+          <div class="si"><div class="sl">销售额</div><div class="sv">579万</div></div>
+          <div class="si"><div class="sl">占比</div><div class="sv" style="color:var(--muted)">12.0%</div></div>
+          <div class="si"><div class="sl">环比</div><div class="sv" style="color:var(--green)">+4.2%</div></div>
+        </div>
+        <hr class="dv">
+        <table class="dt">
+          <thead><tr><th>类型</th><th>金额(万)</th><th>占比</th><th>环比</th></tr></thead>
+          <tbody>
+            <tr><td>员工购车</td><td>284</td><td>49.1%</td><td><span class="badge bu">▲2.3%</span></td></tr>
+            <tr><td>集团采购</td><td>196</td><td>33.8%</td><td><span class="badge bu">▲8.4%</span></td></tr>
+            <tr><td>供应商</td><td>99</td><td>17.1%</td><td><span class="badge bf">→0.5%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cbox">
+        <div class="cbox-hd"><span>内销月度趋势</span></div>
+        <svg width="100%" height="120" viewBox="0 0 400 120" preserveAspectRatio="none">
+          <line x1="0" y1="30" x2="400" y2="30" stroke="var(--border)" stroke-width="0.5"/>
+          <line x1="0" y1="70" x2="400" y2="70" stroke="var(--border)" stroke-width="0.5"/>
+          <line x1="0" y1="110" x2="400" y2="110" stroke="var(--border)" stroke-width="0.5"/>
+          <polyline points="16,80 50,75 84,70 118,72 152,68 186,65 220,70 254,60 288,55 322,58 356,52 390,48" fill="none" stroke="var(--accent)" stroke-width="2"/>
+          <circle cx="390" cy="48" r="3" fill="var(--accent)"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: 产品分析 -->
+<div id="p3" class="page">
+  <div class="row2 c3">
+    <div class="cbox">
+      <div class="cbox-hd"><span>产品结构占比</span></div>
+      <div class="donut-wrap" style="margin-top:8px">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="40" fill="none" stroke="var(--border)" stroke-width="18"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#1e90ff" stroke-width="18" stroke-dasharray="151 100" stroke-dashoffset="0" transform="rotate(-90 55 55)"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#00d4aa" stroke-width="18" stroke-dasharray="83 168" stroke-dashoffset="-151" transform="rotate(-90 55 55)"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#ffc53d" stroke-width="18" stroke-dasharray="17 234" stroke-dashoffset="-234" transform="rotate(-90 55 55)"/>
+          <text x="55" y="52" text-anchor="middle" font-size="10" fill="var(--muted)">产品</text>
+          <text x="55" y="64" text-anchor="middle" font-size="10" fill="var(--muted)">结构</text>
+        </svg>
+        <div class="legend">
+          <div class="li"><div class="dot" style="background:#1e90ff"></div><span>车生长 <b>60%</b></span></div>
+          <div class="li"><div class="dot" style="background:#00d4aa"></div><span>车改装 <b>33%</b></span></div>
+          <div class="li"><div class="dot" style="background:#ffc53d"></div><span>车生活 <b>7%</b></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cbox" style="grid-column:span 2">
+      <div class="cbox-hd"><span>产品线渗透率矩阵</span></div>
+      <table class="dt">
+        <thead><tr><th>产品线</th><th>销售额(万)</th><th>渗透率</th><th>目标</th><th>差距</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tb">T1N</span> 车身防护</td><td>982</td><td><span style="color:var(--green)">42.3%</span></td><td>40%</td><td style="color:var(--green)">+2.3 ppt</td><td><span class="badge bu">超额</span></td></tr>
+          <tr><td><span class="tag tg">T2N</span> 内饰升级</td><td>754</td><td><span style="color:var(--yellow)">31.8%</span></td><td>35%</td><td style="color:var(--red)">-3.2 ppt</td><td><span class="badge bd">不足</span></td></tr>
+          <tr><td><span class="tag tb">T3N</span> 智能驾驶辅助</td><td>621</td><td><span style="color:var(--accent)">38.6%</span></td><td>38%</td><td style="color:var(--green)">+0.6 ppt</td><td><span class="badge bu">达标</span></td></tr>
+          <tr><td><span class="tag ty">T4N</span> 音响娱乐</td><td>412</td><td><span style="color:var(--red)">22.4%</span></td><td>30%</td><td style="color:var(--red)">-7.6 ppt</td><td><span class="badge bd">严重不足</span></td></tr>
+          <tr><td><span class="tag tb">T5N</span> 安全配置</td><td>348</td><td><span style="color:var(--green)">48.2%</span></td><td>45%</td><td style="color:var(--green)">+3.2 ppt</td><td><span class="badge bu">超额</span></td></tr>
+          <tr><td><span class="tag tg">T6N</span> 车载改装</td><td>295</td><td><span style="color:var(--yellow)">28.9%</span></td><td>32%</td><td style="color:var(--red)">-3.1 ppt</td><td><span class="badge bd">不足</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row2 c2">
+    <div class="cbox">
+      <div class="cbox-hd"><span>渗透率趋势（近12月）</span></div>
+      <svg width="100%" height="140" viewBox="0 0 500 140" preserveAspectRatio="none">
+        <line x1="0" y1="20" x2="500" y2="20" stroke="var(--border)" stroke-width="0.5"/>
+        <line x1="0" y1="70" x2="500" y2="70" stroke="var(--border)" stroke-width="0.5"/>
+        <line x1="0" y1="120" x2="500" y2="120" stroke="var(--border)" stroke-width="0.5"/>
+        <polyline points="20,90 60,85 100,80 140,78 180,75 220,70 260,68 300,65 340,60 380,55 420,50 460,48" fill="none" stroke="#1e90ff" stroke-width="2"/>
+        <polyline points="20,55 60,60 100,63 140,68 180,70 220,75 260,78 300,82 340,85 380,88 420,90 460,92" fill="none" stroke="#ff4d4f" stroke-width="2" stroke-dasharray="4,2"/>
+        <line x1="0" y1="65" x2="500" y2="65" stroke="var(--yellow)" stroke-width="1" stroke-dasharray="5,3"/>
+        <text x="466" y="44" font-size="9" fill="#1e90ff">T1N↑</text>
+        <text x="466" y="96" font-size="9" fill="#ff4d4f">T4N↓</text>
+        <text x="466" y="61" font-size="9" fill="var(--yellow)">目标</text>
+      </svg>
+    </div>
+    <div class="cbox">
+      <div class="cbox-hd"><span>SKU 明细（T4N 下钻）</span></div>
+      <table class="dt">
+        <thead><tr><th>SKU</th><th>销量</th><th>渗透率</th><th>环比</th></tr></thead>
+        <tbody>
+          <tr><td>基础音响套装</td><td>1,240</td><td>18.2%</td><td><span class="badge bd">▼4.2%</span></td></tr>
+          <tr><td>豪华音响套装</td><td>680</td><td>9.9%</td><td><span class="badge bd">▼2.8%</span></td></tr>
+          <tr><td>车载屏升级</td><td>430</td><td>6.3%</td><td><span class="badge bf">→0.1%</span></td></tr>
+          <tr><td>HUD 抬头显示</td><td>260</td><td>3.8%</td><td><span class="badge bu">▲1.2%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 4: 归因分析 -->
+<div id="p4" class="page">
+  <div class="row2 c2">
+    <div class="cbox">
+      <div class="cbox-hd">
+        <span>量价差异瀑布图</span>
+        <select style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:11px">
+          <option>总体</option><option>按渠道</option><option>按产品</option>
+        </select>
+      </div>
+      <svg width="100%" height="200" viewBox="0 0 560 200" preserveAspectRatio="none">
+        <line x1="0" y1="30" x2="560" y2="30" stroke="var(--border)" stroke-width="0.5"/>
+        <line x1="0" y1="80" x2="560" y2="80" stroke="var(--border)" stroke-width="0.5"/>
+        <line x1="0" y1="130" x2="560" y2="130" stroke="var(--border)" stroke-width="0.5"/>
+        <line x1="0" y1="180" x2="560" y2="180" stroke="var(--border)" stroke-width="0.5"/>
+        <rect x="10" y="60" width="60" height="120" fill="var(--accent)" rx="3"/>
+        <text x="40" y="52" text-anchor="middle" font-size="9" fill="var(--text)">目标5,200</text>
+        <rect x="90" y="35" width="60" height="45" fill="var(--green)" rx="3"/>
+        <text x="120" y="27" text-anchor="middle" font-size="9" fill="var(--green)">量+380</text>
+        <rect x="170" y="140" width="60" height="40" fill="var(--red)" rx="3"/>
+        <text x="200" y="192" text-anchor="middle" font-size="9" fill="var(--red)">价-520</text>
+        <rect x="250" y="75" width="60" height="20" fill="var(--green)" rx="3"/>
+        <text x="280" y="67" text-anchor="middle" font-size="9" fill="var(--green)">渠道+180</text>
+        <rect x="330" y="145" width="60" height="22" fill="var(--red)" rx="3"/>
+        <text x="360" y="185" text-anchor="middle" font-size="9" fill="var(--red)">产品-220</text>
+        <rect x="410" y="150" width="60" height="12" fill="var(--muted)" rx="3"/>
+        <text x="440" y="178" text-anchor="middle" font-size="9" fill="var(--muted)">其他-20</text>
+        <rect x="480" y="62" width="60" height="110" fill="rgba(30,144,255,.6)" rx="3"/>
+        <text x="510" y="54" text-anchor="middle" font-size="9" fill="var(--text)">实际5,020</text>
+        <line x1="70" y1="60" x2="90" y2="60" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,2"/>
+        <line x1="150" y1="35" x2="170" y2="35" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,2"/>
+        <line x1="230" y1="140" x2="250" y2="140" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="40"  y="197" text-anchor="middle" font-size="9" fill="var(--muted)">目标</text>
+        <text x="120" y="197" text-anchor="middle" font-size="9" fill="var(--green)">量因素</text>
+        <text x="200" y="197" text-anchor="middle" font-size="9" fill="var(--red)">价格因素</text>
+        <text x="280" y="197" text-anchor="middle" font-size="9" fill="var(--green)">渠道结构</text>
+        <text x="360" y="197" text-anchor="middle" font-size="9" fill="var(--red)">产品结构</text>
+        <text x="440" y="197" text-anchor="middle" font-size="9" fill="var(--muted)">其他</text>
+        <text x="510" y="197" text-anchor="middle" font-size="9" fill="var(--accent)">实际</text>
+      </svg>
+    </div>
+    <div class="cbox">
+      <div class="cbox-hd"><span>各维度贡献度拆解</span></div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>量因素</span><span class="up">+380万 (+7.3%)</span></div>
+          <div style="background:var(--border);border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;width:60%;background:var(--green);border-radius:4px"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>价格因素</span><span class="dn">-520万 (-10.0%)</span></div>
+          <div style="background:var(--border);border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;width:82%;background:var(--red);border-radius:4px"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>渠道结构</span><span class="up">+180万 (+3.5%)</span></div>
+          <div style="background:var(--border);border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;width:28%;background:var(--green);border-radius:4px"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>产品结构</span><span class="dn">-220万 (-4.2%)</span></div>
+          <div style="background:var(--border);border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;width:35%;background:var(--red);border-radius:4px"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>其他</span><span style="color:var(--muted)">-20万 (-0.4%)</span></div>
+          <div style="background:var(--border);border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;width:3%;background:var(--muted);border-radius:4px"></div></div>
+        </div>
+        <hr class="dv">
+        <div style="font-size:13px">净差距: <b class="dn">-180万</b> &nbsp; 完成率: <b style="color:var(--yellow)">96.5%</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cbox">
+    <div class="cbox-hd"><span>区域 × 产品 热力图</span><span style="font-size:11px;color:var(--muted)">颜色深=完成率高 / 浅=不足</span></div>
+    <div style="overflow-x:auto;margin-top:8px">
+      <table class="dt" style="min-width:500px">
+        <thead>
+          <tr><th>区域</th><th>T1N 车身防护</th><th>T2N 内饰升级</th><th>T3N 智驾辅助</th><th>T4N 音响娱乐</th><th>T5N 安全配置</th></tr>
+        </thead>
+        <tbody id="heatmap-tb"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 5: 异常告警 -->
+<div id="p5" class="page">
+  <div class="row2 c32">
+    <div>
+      <div class="sec" style="margin-bottom:12px">告警列表</div>
+      <div class="al">
+        <div class="ai">
+          <div class="adot r"></div>
+          <div class="ac"><div class="at">【严重】净利润连续3个月低于目标</div><div class="ad">完成率 76.4%，差距 117.6万，成本压力主因为原材料上涨</div></div>
+          <div class="atag cr">严重</div>
+        </div>
+        <div class="ai">
+          <div class="adot r"></div>
+          <div class="ac"><div class="at">【严重】T4N 音响娱乐渗透率连续4月下滑</div><div class="ad">当前 22.4%，距目标差 7.6 ppt，SKU 基础音响套装同比-32%</div></div>
+          <div class="atag cr">严重</div>
+        </div>
+        <div class="ai">
+          <div class="adot y"></div>
+          <div class="ac"><div class="at">【预警】APP商城整体转化率下滑</div><div class="ad">转化率 4.73% 环比-0.8%，加购到下单流失增加，建议优化结账流程</div></div>
+          <div class="atag wr">预警</div>
+        </div>
+        <div class="ai">
+          <div class="adot y"></div>
+          <div class="ac"><div class="at">【预警】西南大区完成率 87.3%，连续2月低于90%</div><div class="ad">华南区域竞品活动频繁，需补充促销资源</div></div>
+          <div class="atag wr">预警</div>
+        </div>
+        <div class="ai">
+          <div class="adot y"></div>
+          <div class="ac"><div class="at">【预警】T3 完成率较目标差 6.5 ppt</div><div class="ad">B 类及以下经销商 T3 完成率仅 72%，建议重点辅导</div></div>
+          <div class="atag wr">预警</div>
+        </div>
+        <div class="ai">
+          <div class="adot g"></div>
+          <div class="ac"><div class="at">【正常】提车量超额完成目标 7.4%</div><div class="ad">终端渠道贡献主要增量，大区 TOP3 均超额完成</div></div>
+          <div class="atag ok">正常</div>
+        </div>
+        <div class="ai">
+          <div class="adot g"></div>
+          <div class="ac"><div class="at">【正常】毛利率同比改善 +1.2 ppt</div><div class="ad">T5N、T1N 高毛利产品占比提升推动整体毛利改善</div></div>
+          <div class="atag ok">正常</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sec" style="margin-bottom:12px">趋势洞察</div>
+      <div class="cbox" style="margin-bottom:12px">
+        <div class="cbox-hd"><span>月中预测（本月）</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>销售额</span><span style="color:var(--yellow)">预计完成 96.5%</span></div>
+            <div style="background:var(--border);border-radius:4px;height:12px;overflow:hidden">
+              <div style="height:100%;width:96.5%;background:linear-gradient(90deg,var(--accent),rgba(30,144,255,.4));border-radius:4px"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>净利润</span><span style="color:var(--red)">预计完成 78%</span></div>
+            <div style="background:var(--border);border-radius:4px;height:12px;overflow:hidden">
+              <div style="height:100%;width:78%;background:linear-gradient(90deg,var(--red),rgba(255,77,79,.4));border-radius:4px"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>提车量</span><span style="color:var(--green)">预计完成 112%</span></div>
+            <div style="background:var(--border);border-radius:4px;height:12px;overflow:hidden">
+              <div style="height:100%;width:100%;background:linear-gradient(90deg,var(--green),rgba(82,196,26,.4));border-radius:4px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cbox">
+        <div class="cbox-hd"><span>结构变化追踪（6个月）</span></div>
+        <svg width="100%" height="120" viewBox="0 0 300 120" preserveAspectRatio="none">
+          <line x1="0" y1="20" x2="300" y2="20" stroke="var(--border)" stroke-width="0.5"/>
+          <line x1="0" y1="60" x2="300" y2="60" stroke="var(--border)" stroke-width="0.5"/>
+          <line x1="0" y1="100" x2="300" y2="100" stroke="var(--border)" stroke-width="0.5"/>
+          <!-- APP渗透率下降 -->
+          <polyline points="10,40 60,45 110,50 160,55 210,62 260,70" fill="none" stroke="#ff4d4f" stroke-width="2"/>
+          <!-- 终端上升 -->
+          <polyline points="10,80 60,76 110,70 160,65 210,58 260,50" fill="none" stroke="#1e90ff" stroke-width="2"/>
+          <!-- 标注 -->
+          <text x="265" y="68" font-size="8" fill="#ff4d4f">APP↓</text>
+          <text x="265" y="47" font-size="8" fill="#1e90ff">终端↑</text>
+          <text x="10" y="115" font-size="8" fill="var(--muted)">7月</text>
+          <text x="56" y="115" font-size="8" fill="var(--muted)">8月</text>
+          <text x="104" y="115" font-size="8" fill="var(--muted)">9月</text>
+          <text x="152" y="115" font-size="8" fill="var(--muted)">10月</text>
+          <text x="200" y="115" font-size="8" fill="var(--muted)">11月</text>
+          <text x="248" y="115" font-size="8" fill="var(--muted)">12月</text>
+        </svg>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">APP渗透率持续6个月下降趋势 — 需重点排查转化障碍</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Page switching
+function switchPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+// Sub-tab switching
+function switchSub(group, id, el) {
+  document.querySelectorAll('.' + group).forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).style.display = 'block';
+  el.classList.add('active');
+}
+
+// Generate dealer table
+var dealers = [
+  ['龙腾汽车城','华东',286,24,'41.2%','108.3%','超额'],
+  ['星辰汽贸中心','华东',254,21,'38.6%','101.6%','达标'],
+  ['长峰旗舰店','华北',218,19,'43.1%','109.0%','超额'],
+  ['盛大汽配','华南',196,17,'35.2%','98.0%','达标'],
+  ['博远贸易','华东',187,16,'36.8%','93.5%','接近'],
+  ['星艺汽车','西南',165,14,'28.4%','82.5%','预警'],
+  ['远景车行','华南',154,13,'31.6%','77.0%','预警'],
+  ['骏驰专营店','华北',143,12,'44.2%','95.3%','接近'],
+  ['腾飞汽贸','东北',138,11,'39.5%','115.0%','超额'],
+  ['领驭汽车中心','华南',126,10,'30.1%','84.0%','接近']
+];
+var tbody = document.getElementById('dealer-tb');
+dealers.forEach(function(d) {
+  var cls = d[6]==='超额'?'bu':d[6]==='预警'?'bd':'bf';
+  tbody.innerHTML += '<tr><td>' + d[0] + '</td><td>' + d[1] + '</td><td>' + d[2] + '</td><td>' + d[3] + '</td><td>' + d[4] + '</td><td>' + d[5] + '</td><td><span class="badge ' + cls + '">' + d[6] + '</span></td></tr>';
+});
+
+// Generate heatmap table
+var regions = ['华东','华南','华北','西南','东北'];
+var heatData = [
+  [108,94,101,72,116],
+  [98,88,105,65,103],
+  [112,96,98,78,121],
+  [82,75,88,58,90],
+  [115,102,110,80,118]
+];
+var htb = document.getElementById('heatmap-tb');
+regions.forEach(function(r, i) {
+  var row = '<tr><td><b>' + r + '</b></td>';
+  heatData[i].forEach(function(v) {
+    var bg = v >= 110 ? 'rgba(82,196,26,.5)' : v >= 100 ? 'rgba(82,196,26,.25)' : v >= 90 ? 'rgba(255,197,61,.2)' : 'rgba(255,77,79,.25)';
+    var clr = v >= 100 ? 'var(--green)' : v >= 90 ? 'var(--yellow)' : 'var(--red)';
+    row += '<td style="background:' + bg + ';text-align:center;color:' + clr + ';font-weight:600">' + v + '%</td>';
+  });
+  row += '</tr>';
+  htb.innerHTML += row;
+});
+</script>
+</body>
+</html>
