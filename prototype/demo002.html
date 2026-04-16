@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>好物商城数据驾驶舱 · demo002</title>
+<style>
+  :root {
+    --bg:#0e1117; --sb:#161b22; --card:#1a1f2e; --border:#2d3748;
+    --accent:#00cc88; --blue:#4299e1; --warn:#ffa500; --danger:#ff4b4b;
+    --purple:#9f7aea; --pink:#ed64a6;
+    --text:#e2e8f0; --muted:#718096;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{display:flex;height:100vh;background:var(--bg);color:var(--text);font-family:'PingFang SC','Microsoft YaHei',sans-serif;overflow:hidden}
+  /* sidebar */
+  #sb{width:224px;min-width:224px;background:var(--sb);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0}
+  .logo{display:flex;align-items:center;gap:10px;padding:0 20px 20px;border-bottom:1px solid var(--border)}
+  .logo .ic{font-size:28px}
+  .logo .t1{font-size:14px;font-weight:700;line-height:1.3}
+  .logo .t2{font-size:11px;color:var(--muted)}
+  nav{margin-top:14px;flex:1}
+  nav a{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--muted);text-decoration:none;font-size:14px;border-left:3px solid transparent;transition:all .15s;cursor:pointer;user-select:none}
+  nav a:hover{background:rgba(255,255,255,.04);color:var(--text)}
+  nav a.on{border-left-color:var(--accent);background:rgba(0,204,136,.08);color:var(--accent);font-weight:600}
+  .sfooter{padding:14px 20px;font-size:11px;color:var(--muted);border-top:1px solid var(--border)}
+  /* main */
+  #main{flex:1;overflow-y:auto;padding:28px 32px}
+  .pg{display:none}.pg.on{display:block}
+  h1{font-size:22px;font-weight:700;margin-bottom:20px}
+  h2{font-size:15px;font-weight:600;margin:24px 0 12px;color:var(--text)}
+  /* kpi */
+  .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .kcard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px}
+  .klabel{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .kval{font-size:26px;font-weight:700}
+  .kd{font-size:12px;margin-top:4px}
+  .kd.up{color:var(--accent)}.kd.dn{color:var(--danger)}
+  /* chart cards */
+  .cgrid{display:grid;gap:16px;margin-bottom:16px}
+  .c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}
+  .cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px}
+  .cc h3{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+  /* alerts */
+  .alist{display:flex;flex-direction:column;gap:12px}
+  .ai{border-radius:8px;padding:14px 16px;border-left:4px solid}
+  .ai.crit{border-color:var(--danger);background:rgba(255,75,75,.08)}
+  .ai.warn{border-color:var(--warn);background:rgba(255,165,0,.08)}
+  .ai.info{border-color:var(--accent);background:rgba(0,204,136,.07)}
+  .atitle{font-weight:600;font-size:14px}
+  .adesc{font-size:13px;color:var(--muted);margin-top:4px}
+  .abadge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-bottom:6px}
+  .abadge.crit{background:rgba(255,75,75,.2);color:var(--danger)}
+  .abadge.warn{background:rgba(255,165,0,.2);color:var(--warn)}
+  .abadge.info{background:rgba(0,204,136,.2);color:var(--accent)}
+  .aul{margin-top:8px;padding-left:16px}
+  .aul li{font-size:13px;color:var(--text);margin-top:3px}
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600}
+  td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
+  tr:hover td{background:rgba(255,255,255,.025)}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
+  .tg{background:rgba(0,204,136,.15);color:var(--accent)}
+  .tr{background:rgba(255,75,75,.15);color:var(--danger)}
+  .to{background:rgba(255,165,0,.15);color:var(--warn)}
+  .tb{background:rgba(66,153,225,.15);color:var(--blue)}
+  /* funnel */
+  .funnel{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+  .frow{display:flex;align-items:center;gap:10px}
+  .flbl{width:90px;font-size:12px;color:var(--muted);text-align:right;flex-shrink:0}
+  .fbg{flex:1;height:28px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden}
+  .ffill{height:28px;border-radius:4px;display:flex;align-items:center;padding-left:10px;font-size:12px;color:#fff;font-weight:600;transition:width .3s}
+  .fval{width:70px;font-size:12px;font-weight:600;flex-shrink:0}
+  /* arch */
+  .arch{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px 24px;font-family:monospace;font-size:13px;color:#a0aec0;white-space:pre-wrap;line-height:1.8}
+  /* canvas charts */
+  canvas{display:block;width:100%!important}
+  @media(max-width:860px){.kgrid{grid-template-columns:1fr 1fr}.c2,.c3{grid-template-columns:1fr}#sb{display:none}}
+</style>
+</head>
+<body>
+<aside id="sb">
+  <div class="logo"><span class="ic">🚗</span><div><div class="t1">好物商城驾驶舱</div><div class="t2">Car Accessories Mall · Cockpit</div></div></div>
+  <nav>
+    <a class="on" onclick="nav('overview',this)">🏠 总览大盘</a>
+    <a onclick="nav('sales',this)">📊 销售分析</a>
+    <a onclick="nav('inventory',this)">📦 库存监控</a>
+    <a onclick="nav('users',this)">👥 用户洞察</a>
+    <a onclick="nav('alerts',this)">🔔 问题发现 &amp; 行动建议</a>
+  </nav>
+  <div class="sfooter">demo002.html · prototype<br>数据为模拟数据，仅供演示</div>
+</aside>
+
+<main id="main">
+
+<!-- ① 总览大盘 -->
+<section id="pg-overview" class="pg on">
+  <h1>🏠 总览大盘</h1>
+  <div class="kgrid">
+    <div class="kcard"><div class="klabel">💰 近7日 GMV</div><div class="kval">¥ 4,832,100</div><div class="kd up">▲ +12.4% 较上周</div></div>
+    <div class="kcard"><div class="klabel">📦 近7日订单量</div><div class="kval">28,461</div><div class="kd up">▲ +8.7% 较上周</div></div>
+    <div class="kcard"><div class="klabel">👥 近7日新用户</div><div class="kval">5,239</div><div class="kd dn">▼ −3.2% 较上周</div></div>
+    <div class="kcard"><div class="klabel">🔄 平均退货率</div><div class="kval">3.8%</div><div class="kd dn">▲ +0.6pp 较上周</div></div>
+  </div>
+  <div class="cgrid c2">
+    <div class="cc"><h3>近14日 GMV 趋势（万元）</h3><canvas id="c-gmv" height="200"></canvas></div>
+    <div class="cc"><h3>品类 GMV 占比</h3><canvas id="c-cat" height="200"></canvas></div>
+  </div>
+  <h2>🔔 当前告警摘要</h2>
+  <div class="alist">
+    <div class="ai crit"><span class="abadge crit">严重</span><div class="atitle">轮毂清洁剂库存不足</div><div class="adesc">当前库存仅剩 3 天可售，低于安全线 14 天，急需补货。</div></div>
+    <div class="ai warn"><span class="abadge warn">警告</span><div class="atitle">行车记录仪退货率异常</div><div class="adesc">近7日退货率 12.3%（正常基线 4%），已触发 3σ 阈值。</div></div>
+    <div class="ai info"><span class="abadge info">提示</span><div class="atitle">座椅通风垫搜索量飙升 +240%</div><div class="adesc">建议提前备货，当前可售天数仅 7 天。</div></div>
+  </div>
+</section>
+
+<!-- ② 销售分析 -->
+<section id="pg-sales" class="pg">
+  <h1>📊 销售分析</h1>
+  <div class="kgrid">
+    <div class="kcard"><div class="klabel">本月 GMV</div><div class="kval">¥ 18.6M</div><div class="kd up">▲ +9.1%</div></div>
+    <div class="kcard"><div class="klabel">订单转化率</div><div class="kval">3.24%</div><div class="kd dn">▼ −0.3pp</div></div>
+    <div class="kcard"><div class="klabel">客单价</div><div class="kval">¥ 169.8</div><div class="kd up">▲ +5.2%</div></div>
+    <div class="kcard"><div class="klabel">复购率</div><div class="kval">38.5%</div><div class="kd up">▲ +2.1pp</div></div>
+  </div>
+  <div class="cgrid c2">
+    <div class="cc"><h3>各渠道销售额（万元）</h3><canvas id="c-ch" height="220"></canvas></div>
+    <div class="cc"><h3>品类月度 GMV 对比（万元）</h3><canvas id="c-cb" height="220"></canvas></div>
+  </div>
+  <h2>📋 TOP 10 热销 SKU</h2>
+  <div class="cc">
+    <table>
+      <thead><tr><th>SKU</th><th>品类</th><th>近7日销量</th><th>GMV</th><th>环比</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>行车记录仪 Pro</td><td>电子</td><td>2,341</td><td>¥ 351,150</td><td style="color:var(--accent)">▲ +18%</td><td><span class="tag tg">热销</span></td></tr>
+        <tr><td>香氛补充液套装</td><td>内饰</td><td>1,892</td><td>¥ 94,600</td><td style="color:var(--accent)">▲ +7%</td><td><span class="tag tg">热销</span></td></tr>
+        <tr><td>车载充电器 65W</td><td>电子</td><td>1,754</td><td>¥ 175,400</td><td style="color:var(--danger)">▼ −3%</td><td><span class="tag tb">稳定</span></td></tr>
+        <tr><td>轮毂清洁剂</td><td>清洁</td><td>1,621</td><td>¥ 56,735</td><td style="color:var(--accent)">▲ +22%</td><td><span class="tag to">缺货风险</span></td></tr>
+        <tr><td>座椅通风垫</td><td>内饰</td><td>1,440</td><td>¥ 230,400</td><td style="color:var(--accent)">▲ +11%</td><td><span class="tag tg">热销</span></td></tr>
+        <tr><td>氛围灯套件</td><td>内饰</td><td>1,208</td><td>¥ 108,720</td><td style="color:var(--danger)">▼ −6%</td><td><span class="tag tb">稳定</span></td></tr>
+        <tr><td>车载净化器</td><td>电子</td><td>983</td><td>¥ 147,450</td><td style="color:var(--accent)">▲ +4%</td><td><span class="tag tb">稳定</span></td></tr>
+        <tr><td>汽车脚垫（全包）</td><td>内饰</td><td>874</td><td>¥ 87,400</td><td style="color:var(--danger)">▼ −9%</td><td><span class="tag tr">滞销预警</span></td></tr>
+        <tr><td>车漆修复笔</td><td>清洁</td><td>756</td><td>¥ 30,240</td><td style="color:var(--accent)">▲ +2%</td><td><span class="tag tb">稳定</span></td></tr>
+        <tr><td>行李架横杆</td><td>改装</td><td>641</td><td>¥ 192,300</td><td style="color:var(--danger)">▼ −14%</td><td><span class="tag tr">滞销预警</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ③ 库存监控 -->
+<section id="pg-inventory" class="pg">
+  <h1>📦 库存监控</h1>
+  <div class="kgrid">
+    <div class="kcard"><div class="klabel">SKU 总数</div><div class="kval">1,248</div><div class="kd up">▲ +32 本月新增</div></div>
+    <div class="kcard"><div class="klabel">⚠️ 严重缺货 SKU</div><div class="kval" style="color:var(--danger)">12</div><div class="kd dn">可售天数 &lt; 7 天</div></div>
+    <div class="kcard"><div class="klabel">🔶 库存预警 SKU</div><div class="kval" style="color:var(--warn)">38</div><div class="kd dn">可售天数 7~14 天</div></div>
+    <div class="kcard"><div class="klabel">📦 库存积压 SKU</div><div class="kval" style="color:var(--blue)">87</div><div class="kd dn">可售天数 &gt; 90 天</div></div>
+  </div>
+  <div class="cgrid c2">
+    <div class="cc"><h3>库存健康度分布</h3><canvas id="c-inv" height="200"></canvas></div>
+    <div class="cc"><h3>严重缺货 SKU · 可售天数</h3><canvas id="c-stock" height="200"></canvas></div>
+  </div>
+  <h2>🔴 严重缺货 SKU 明细</h2>
+  <div class="cc">
+    <table>
+      <thead><tr><th>SKU</th><th>当前库存</th><th>日均销量</th><th>可售天数</th><th>状态</th><th>建议补货量</th></tr></thead>
+      <tbody>
+        <tr><td>轮毂清洁剂</td><td>321</td><td>107</td><td><strong style="color:var(--danger)">3 天</strong></td><td><span class="tag tr">严重缺货</span></td><td>2,000 件</td></tr>
+        <tr><td>车漆修复笔</td><td>189</td><td>54</td><td><strong style="color:var(--danger)">4 天</strong></td><td><span class="tag tr">严重缺货</span></td><td>1,500 件</td></tr>
+        <tr><td>行车记录仪 Pro</td><td>702</td><td>117</td><td><strong style="color:var(--warn)">6 天</strong></td><td><span class="tag to">缺货预警</span></td><td>3,000 件</td></tr>
+        <tr><td>座椅通风垫</td><td>890</td><td>128</td><td><strong style="color:var(--warn)">7 天</strong></td><td><span class="tag to">缺货预警</span></td><td>2,500 件</td></tr>
+        <tr><td>车载充电器 65W</td><td>1,230</td><td>146</td><td><strong style="color:var(--warn)">8 天</strong></td><td><span class="tag to">缺货预警</span></td><td>3,000 件</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ④ 用户洞察 -->
+<section id="pg-users" class="pg">
+  <h1>👥 用户洞察</h1>
+  <div class="kgrid">
+    <div class="kcard"><div class="klabel">注册用户总数</div><div class="kval">524,831</div><div class="kd up">▲ +5,239 本周</div></div>
+    <div class="kcard"><div class="klabel">月活跃用户 MAU</div><div class="kval">128,402</div><div class="kd up">▲ +3.4%</div></div>
+    <div class="kcard"><div class="klabel">付费转化率</div><div class="kval">24.5%</div><div class="kd dn">▼ −1.2pp</div></div>
+    <div class="kcard"><div class="klabel">LTV 人均贡献</div><div class="kval">¥ 892</div><div class="kd up">▲ +6.8%</div></div>
+  </div>
+  <div class="cgrid c2">
+    <div class="cc"><h3>购买转化漏斗</h3>
+      <div class="funnel">
+        <div class="frow"><span class="flbl">访问</span><div class="fbg"><div class="ffill" style="width:100%;background:#4299e1">524,831</div></div><span class="fval" style="color:#4299e1">100%</span></div>
+        <div class="frow"><span class="flbl">浏览商品</span><div class="fbg"><div class="ffill" style="width:72%;background:#4299e1">378,038</div></div><span class="fval" style="color:#4299e1">72%</span></div>
+        <div class="frow"><span class="flbl">加入购物车</span><div class="fbg"><div class="ffill" style="width:38%;background:#00cc88">199,436</div></div><span class="fval" style="color:#00cc88">38%</span></div>
+        <div class="frow"><span class="flbl">发起支付</span><div class="fbg"><div class="ffill" style="width:28%;background:#00cc88">146,952</div></div><span class="fval" style="color:#00cc88">28%</span></div>
+        <div class="frow"><span class="flbl">支付成功</span><div class="fbg"><div class="ffill" style="width:24%;background:#ffa500">125,959</div></div><span class="fval" style="color:#ffa500">24%</span></div>
+      </div>
+    </div>
+    <div class="cc"><h3>近6月用户留存率（Cohort）</h3><canvas id="c-ret" height="200"></canvas></div>
+  </div>
+  <h2>🚗 品牌偏好 Top 10</h2>
+  <div class="cc"><canvas id="c-brand" height="180"></canvas></div>
+</section>
+
+<!-- ⑤ 问题发现 & 行动建议 -->
+<section id="pg-alerts" class="pg">
+  <h1>🔔 问题发现 &amp; 行动建议</h1>
+  <div class="kgrid">
+    <div class="kcard"><div class="klabel">🔴 严重告警</div><div class="kval" style="color:var(--danger)">3</div></div>
+    <div class="kcard"><div class="klabel">🟠 警告</div><div class="kval" style="color:var(--warn)">7</div></div>
+    <div class="kcard"><div class="klabel">🟢 提示</div><div class="kval" style="color:var(--accent)">12</div></div>
+    <div class="kcard"><div class="klabel">✅ 今日已处理</div><div class="kval">8</div><div class="kd up">▲ 处理良好</div></div>
+  </div>
+  <div class="alist">
+    <div class="ai crit"><span class="abadge crit">严重</span><div class="atitle">轮毂清洁剂库存严重不足（预计3天断货）</div><div class="adesc">当前库存 321 件，日均销量 107 件，可售天数仅剩 3 天，低于安全线 14 天。</div><div class="adesc" style="margin-top:6px"><strong>根因分析：</strong>供应商备货周期 7 天，系统未提前触发补货工单，库存持续消耗至临界点。</div><ul class="aul"><li>立即联系供应商加急补货 2,000 件（期望 3 天内到仓）</li><li>临时下架部分渠道促销活动，降低当前销售速率</li><li>调整安全库存系数：从 14 天 → 21 天</li></ul></div>
+    <div class="ai crit"><span class="abadge crit">严重</span><div class="atitle">行车记录仪退货率异常（12.3% 超基线 3σ）</div><div class="adesc">近7日退货率 12.3%，正常基线 4%，已触发 3σ 异常检测阈值。</div><div class="adesc" style="margin-top:6px"><strong>根因分析：</strong>用户反馈集中在"夜间画质模糊"，推测当前批次镜头存在缺陷。</div><ul class="aul"><li>暂停当前批次新订单发货，等待质检结论</li><li>通知客服对已购用户提前告知并开放换货通道</li><li>与供应商对账，启动质量索赔流程</li></ul></div>
+    <div class="ai crit"><span class="abadge crit">严重</span><div class="atitle">华东仓发货时效下降（平均 3.8 天，超 SLA 48h）</div><div class="adesc">过去72小时华东仓平均发货时效 3.8 天，SLA 要求 ≤ 2 天，已影响 1,246 笔订单。</div><div class="adesc" style="margin-top:6px"><strong>根因分析：</strong>节假日高峰期人员不足叠加分拣系统故障（已修复），积压订单清理中。</div><ul class="aul"><li>调配华南仓运力支援华东区域订单</li><li>对超时订单主动推送补偿优惠券（5元）</li><li>实时展示仓库时效恢复进度</li></ul></div>
+    <div class="ai warn"><span class="abadge warn">警告</span><div class="atitle">付费转化率连续3日下滑（−1.2pp）</div><div class="adesc">本周付费转化率 24.5%，较上周 25.7% 下滑 1.2pp，购物车→支付流失率上升。</div><ul class="aul"><li>排查支付流程是否存在技术异常（超时、错误码）</li><li>分渠道拆解，锁定流失最严重入口</li><li>评估是否启用限时折扣刺激转化</li></ul></div>
+    <div class="ai warn"><span class="abadge warn">警告</span><div class="atitle">汽车脚垫（全包）滞销，库存积压超90天</div><div class="adesc">近30日销量 874 件，库存 12,400 件，可售天数 426 天，占用资金约 87 万元。</div><ul class="aul"><li>启动满减清仓活动，与营销团队协调资源位</li><li>联系供应商协商退货或换货方案</li></ul></div>
+    <div class="ai info"><span class="abadge info">提示</span><div class="atitle">座椅通风垫搜索量飙升 +240%，可能即将爆单</div><div class="adesc">近3日站内搜索量同比增长 240%，当前库存可售天数仅 7 天，建议提前备货。</div><ul class="aul"><li>预测下周销量，紧急追加备货 2,500 件</li><li>安排首页资源位曝光，趁势放量</li></ul></div>
+  </div>
+  <h2>🏗️ 问题发现机制说明</h2>
+  <div class="arch">数据采集层
+  ├── 订单事件流（Kafka）
+  ├── 用户行为日志（埋点 SDK）
+  ├── 库存变更消息队列
+  └── 营销活动数据同步
+
+实时计算层（Flink）
+  ├── CEP 复杂事件检测
+  ├── 滑动窗口 GMV 环比告警
+  ├── 退货率异常检测（3σ 规则）
+  └── 库存预测模型（安全库存线）
+
+通知与行动层
+  ├── 驾驶舱实时告警面板（本页）
+  ├── 钉钉 / 企微 Webhook 推送
+  ├── 工单系统自动创建
+  └── 行动建议 RAG 生成（LLM）</div>
+</section>
+
+</main>
+
+<script>
+// ── Page navigation ─────────────────────────────────────────────────────────
+const drawn = {};
+function nav(id, el) {
+  document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('on'));
+  document.getElementById('pg-' + id).classList.add('on');
+  el.classList.add('on');
+  if (!drawn[id]) { drawPage(id); drawn[id] = true; }
+}
+
+// ── Micro chart library (pure Canvas) ───────────────────────────────────────
+const BG = '#0e1117', CARD = '#1a1f2e', GRID = 'rgba(255,255,255,0.07)';
+const C = { accent:'#00cc88', blue:'#4299e1', warn:'#ffa500', danger:'#ff4b4b',
+            purple:'#9f7aea', pink:'#ed64a6', muted:'#718096', text:'#e2e8f0' };
+
+function px(canvas) {
+  const r = window.devicePixelRatio || 1;
+  canvas.width  = canvas.offsetWidth  * r;
+  canvas.height = canvas.offsetHeight * r;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(r, r);
+  return { ctx, w: canvas.offsetWidth, h: canvas.offsetHeight };
+}
+
+// Line chart
+function lineChart(id, labels, datasets) {
+  const cv = document.getElementById(id); if (!cv) return;
+  const { ctx, w, h } = px(cv);
+  const pad = { t:16, r:16, b:36, l:52 };
+  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+
+  // collect all values
+  const allVals = datasets.flatMap(d => d.data.filter(v => v != null));
+  const mn = Math.min(...allVals) * 0.9, mx = Math.max(...allVals) * 1.05;
+  const range = mx - mn || 1;
+
+  // grid
+  ctx.strokeStyle = GRID; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ch * (1 - i / 4);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+    const val = mn + range * (i / 4);
+    ctx.fillStyle = C.muted; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(Math.round(val), pad.l - 6, y + 4);
+  }
+
+  // x labels
+  ctx.fillStyle = C.muted; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  const step = Math.ceil(labels.length / 7);
+  labels.forEach((lbl, i) => {
+    if (i % step === 0 || i === labels.length - 1) {
+      const x = pad.l + (i / (labels.length - 1)) * cw;
+      ctx.fillText(lbl, x, h - 8);
+    }
+  });
+
+  // datasets
+  datasets.forEach(ds => {
+    const pts = ds.data.map((v, i) => v == null ? null : {
+      x: pad.l + (i / (labels.length - 1)) * cw,
+      y: pad.t + ch * (1 - (v - mn) / range)
+    });
+
+    // fill
+    ctx.beginPath();
+    let started = false;
+    pts.forEach((p, i) => {
+      if (!p) { started = false; return; }
+      if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+      else ctx.lineTo(p.x, p.y);
+    });
+    ctx.strokeStyle = ds.color; ctx.lineWidth = 2; ctx.stroke();
+
+    // area fill
+    const valid = pts.filter(Boolean);
+    if (valid.length) {
+      ctx.beginPath();
+      ctx.moveTo(valid[0].x, pad.t + ch);
+      valid.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(valid[valid.length-1].x, pad.t + ch);
+      ctx.closePath();
+      ctx.fillStyle = ds.color + '22'; ctx.fill();
+    }
+
+    // dots
+    pts.forEach(p => {
+      if (!p) return;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+      ctx.fillStyle = ds.color; ctx.fill();
+    });
+  });
+
+  // legend
+  if (datasets.length > 1) {
+    let lx = pad.l;
+    datasets.forEach(ds => {
+      ctx.fillStyle = ds.color;
+      ctx.fillRect(lx, 2, 14, 4);
+      ctx.fillStyle = C.muted; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(ds.label, lx + 18, 8);
+      lx += ctx.measureText(ds.label).width + 36;
+    });
+  }
+}
+
+// Doughnut chart
+function donutChart(id, labels, data, colors) {
+  const cv = document.getElementById(id); if (!cv) return;
+  const { ctx, w, h } = px(cv);
+  const cx = w * 0.38, cy = h / 2, r = Math.min(cx, cy) * 0.8, ri = r * 0.55;
+  const total = data.reduce((a, b) => a + b, 0);
+  let angle = -Math.PI / 2;
+
+  data.forEach((v, i) => {
+    const a = (v / total) * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, angle, angle + a);
+    ctx.closePath(); ctx.fillStyle = colors[i]; ctx.fill();
+    angle += a;
+  });
+  // inner circle
+  ctx.beginPath(); ctx.arc(cx, cy, ri, 0, Math.PI*2);
+  ctx.fillStyle = CARD; ctx.fill();
+
+  // legend
+  const lx = w * 0.72, ly0 = cy - (labels.length * 20) / 2;
+  labels.forEach((lbl, i) => {
+    const ly = ly0 + i * 22;
+    ctx.fillStyle = colors[i];
+    ctx.beginPath(); ctx.arc(lx - 8, ly, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = C.text; ctx.font = '12px sans-serif'; ctx.textAlign = 'left';
+    const pct = Math.round(data[i] / total * 100);
+    ctx.fillText(lbl + '  ' + pct + '%', lx, ly + 4);
+  });
+}
+
+// Horizontal bar chart
+function hbarChart(id, labels, data, colors, maxOverride) {
+  const cv = document.getElementById(id); if (!cv) return;
+  const { ctx, w, h } = px(cv);
+  const maxV = maxOverride || Math.max(...data) * 1.1;
+  const barH = Math.min(26, (h - 20) / labels.length - 8);
+  const pad = { l: 120, r: 50, t: 10, b: 20 };
+  const cw = w - pad.l - pad.r;
+
+  labels.forEach((lbl, i) => {
+    const y = pad.t + i * ((h - pad.t - pad.b) / labels.length);
+    const bw = (data[i] / maxV) * cw;
+    const clr = Array.isArray(colors) ? (colors.length > 1 ? colors[i] : colors[0]) : colors;
+
+    ctx.fillStyle = C.muted; ctx.font = '12px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(lbl, pad.l - 8, y + barH / 2 + 4);
+
+    ctx.fillStyle = clr + 'cc';
+    ctx.beginPath(); ctx.roundRect(pad.l, y, bw, barH, 3); ctx.fill();
+
+    ctx.fillStyle = C.text; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(data[i], pad.l + bw + 6, y + barH / 2 + 4);
+  });
+}
+
+// Grouped bar chart
+function groupedBar(id, labels, ds1, ds2, c1, c2) {
+  const cv = document.getElementById(id); if (!cv) return;
+  const { ctx, w, h } = px(cv);
+  const pad = { t:24, r:16, b:40, l:50 };
+  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+  const n = labels.length;
+  const grpW = cw / n, bW = grpW * 0.32;
+  const maxV = Math.max(...ds1.data, ...ds2.data) * 1.1;
+
+  // grid
+  ctx.strokeStyle = GRID; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ch * (1 - i / 4);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+    ctx.fillStyle = C.muted; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(Math.round(maxV * i / 4), pad.l - 4, y + 4);
+  }
+
+  labels.forEach((lbl, i) => {
+    const gx = pad.l + i * grpW + grpW * 0.1;
+    const b1h = (ds1.data[i] / maxV) * ch, b2h = (ds2.data[i] / maxV) * ch;
+
+    ctx.fillStyle = c1 + 'cc';
+    ctx.beginPath(); ctx.roundRect(gx, pad.t + ch - b1h, bW, b1h, 3); ctx.fill();
+
+    ctx.fillStyle = c2 + '88';
+    ctx.beginPath(); ctx.roundRect(gx + bW + 2, pad.t + ch - b2h, bW, b2h, 3); ctx.fill();
+
+    ctx.fillStyle = C.muted; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(lbl, pad.l + i * grpW + grpW / 2, h - 8);
+  });
+
+  // legend
+  [[c1, ds1.label],[c2, ds2.label]].forEach(([c, l], i) => {
+    const lx = pad.l + i * 90;
+    ctx.fillStyle = c; ctx.fillRect(lx, 4, 14, 5);
+    ctx.fillStyle = C.muted; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(l, lx + 18, 10);
+  });
+}
+
+// ── Draw each page ────────────────────────────────────────────────────────────
+function drawPage(id) {
+  if (id === 'overview') {
+    lineChart('c-gmv',
+      ['3/28','3/29','3/30','3/31','4/1','4/2','4/3','4/4','4/5','4/6','4/7','4/8','4/9','4/10'],
+      [{ label:'GMV', data:[58,63,71,54,82,94,88,65,72,80,91,85,96,102], color:C.accent }]
+    );
+    donutChart('c-cat',
+      ['电子配件','内饰改装','清洁护理','驾驶辅助','改装零件','其他'],
+      [34,27,18,12,6,3],
+      [C.accent, C.blue, C.warn, C.purple, C.pink, '#4a5568']
+    );
+  } else if (id === 'sales') {
+    hbarChart('c-ch',
+      ['天猫旗舰店','京东自营','抖音小店','APP 自营','微信小程序','拼多多'],
+      [520,380,290,210,145,88],
+      [C.accent,C.blue,C.warn,C.purple,C.pink,'#4a5568']
+    );
+    groupedBar('c-cb',
+      ['电子','内饰','清洁','驾驶','改装'],
+      { label:'本月', data:[634,503,335,224,112] },
+      { label:'上月', data:[580,460,310,200,130] },
+      C.accent, C.blue
+    );
+  } else if (id === 'inventory') {
+    donutChart('c-inv',
+      ['正常库存','库存预警','严重缺货','库存积压'],
+      [1111,38,12,87],
+      [C.accent, C.warn, C.danger, C.blue]
+    );
+    hbarChart('c-stock',
+      ['轮毂清洁剂','车漆修复笔','行车记录仪','座椅通风垫','车载充电器'],
+      [3,4,6,7,8],
+      [C.danger, C.danger, C.warn, C.warn, C.warn],
+      14
+    );
+  } else if (id === 'users') {
+    lineChart('c-ret',
+      ['2024-11','2024-12','2025-01','2025-02','2025-03','2025-04'],
+      [
+        { label:'次月留存', data:[58,61,55,63,60,null], color:C.accent },
+        { label:'3月留存',  data:[42,44,39,46,null,null], color:C.blue },
+        { label:'6月留存',  data:[28,30,null,null,null,null], color:C.warn }
+      ]
+    );
+    hbarChart('c-brand',
+      ['比亚迪','特斯拉','大众','丰田','本田','奥迪','宝马','奔驰','小米汽车','理想'],
+      [12400,9800,8700,7900,7200,5800,5400,4900,3800,3200],
+      [C.accent]
+    );
+  }
+}
+
+// Draw first page on load
+window.addEventListener('load', () => { drawPage('overview'); drawn['overview'] = true; });
+// Redraw on resize
+window.addEventListener('resize', () => Object.keys(drawn).forEach(k => { if(drawn[k]) drawPage(k); }));
+</script>
+</body>
+</html>
